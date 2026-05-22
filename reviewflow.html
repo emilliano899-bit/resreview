@@ -2281,7 +2281,7 @@ function openRtmModal(pid){
 function closeRtmModal(){closeModal('rtm-modal');}
 function confirmRtm(){
   const p=S.pins.find(x=>x.id===S.rtmPinId);if(!p){closeRtmModal();return;}
-  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');
+  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');scheduleSync();
 }
 function showView(view){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('on',t.id==='nav-'+view));
@@ -2485,5 +2485,3 @@ function renderTimeline(){
 
 document.addEventListener("DOMContentLoaded",init);
 </script>
-</body>
-</html>
