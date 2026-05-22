@@ -795,6 +795,7 @@ function setSyncPill(state,msg){
 function scheduleSync(){
   if(_applyingRemote)return;
   saveLocal();
+  _syncIgnore=Date.now()+8000; /* block poll immediately so it can't overwrite local changes */
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(pushToFirebase,1000);
 }
@@ -914,10 +915,15 @@ function startFirebaseSync(){
       .then(function(r){return r.json();})
       .then(function(d){
         if(d&&d.pins){
-          /* merge Firebase pins with local images */
-          if(S.bgImage)d.bgImage=S.bgImage;
-          if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
-          applyRemote(d);
+          /* Only apply if Firebase has MORE pins than local (someone else added data)
+             or if local count matches (safe to sync positions/edits).
+             Never apply if Firebase has FEWER pins — that means local has unsaved additions. */
+          if(d.pins.length>=S.pins.length){
+            /* preserve local images when applying remote pin data */
+            if(S.bgImage)d.bgImage=S.bgImage;
+            if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
+            applyRemote(d);
+          }
           setSyncPill('ok','● live');
         }
       })
@@ -1920,7 +1926,7 @@ function renderPins(){
     lbl.innerHTML=`<span class="pin-label-txt">${p.auth}</span>${sess?`<span class="pin-label-sess">${sess.name}</span>`:''}`;
     wrap.appendChild(pin);wrap.appendChild(lbl);
     pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
-    makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
+    makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);scheduleSync();});
     cont.appendChild(wrap);
   });
 }
