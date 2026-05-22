@@ -404,7 +404,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="vsep"></div>
   <button class="hbtn" id="admin-btn" onclick="toggleAdmin()">Admin</button>
   <span class="admin-pill" id="admin-pill" style="display:none">ADMIN</span>
-  <span class="sync-pill" id="sync-pill" title="Firebase sync status">⟳ Connecting…</span>
+
 </header>
 
 <!-- MAIN -->
@@ -759,45 +759,12 @@ function wc(){const w=$('cwrap');return{x:w.offsetWidth/2,y:w.offsetHeight/2};}
 function fmtMentions(t){return(t||'').replace(/@(\w+)/g,'<span class="r-txt" style="color:var(--sel);font-weight:600">@$1</span>');}
 
 /* ── FIREBASE SYNC ── */
-const FB_URL='https://resreview-1d13f-default-rtdb.firebaseio.com/state.json';
-let _syncTimer=null,_syncIgnore=0,_applyingRemote=false;
+/* demo mode - no persistence */
+function scheduleSync(){}
+function setSyncPill(){}
+function startFirebaseSync(){}
 
-function scheduleSync(){
-  if(_applyingRemote)return;
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(pushToFirebase,800);
-}
-function setSyncPill(state,msg){
-  var p=document.getElementById('sync-pill');if(!p)return;
-  p.textContent=msg;
-  if(state==='ok'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #4ade80;color:#166534;background:#dcfce7;letter-spacing:.03em;transition:all .3s;';}
-  else if(state==='err'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #f87171;color:#991b1b;background:#fee2e2;letter-spacing:.03em;transition:all .3s;';}
-  else{p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;';}
-}
-function pushToFirebase(){
-  _syncIgnore=Date.now()+3000;
-  setSyncPill('','⟳ Saving…');
-  var payload=JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
-    sessions:S.sessions,products:S.products,versions:S.versions});
-  fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
-  .then(function(r){
-    if(!r.ok){r.text().then(function(t){
-      console.error('Firebase write failed:',r.status,t);
-      setSyncPill('err','✗ Sync '+r.status);
-      toast('⚠ Sync error: '+r.status);
-    });}
-    else{
-      console.log('Firebase sync OK, pins:',S.pins.length);
-      setSyncPill('ok','✓ Saved');
-      setTimeout(function(){setSyncPill('','● Live');},3000);
-    }
-  })
-  .catch(function(e){
-    console.error('Firebase fetch error:',e);
-    setSyncPill('err','✗ No connection');
-    toast('⚠ Sync error — check console');
-  });
-}
+
 function applyRemote(data){
   if(!data)return;
   _applyingRemote=true;
@@ -816,13 +783,7 @@ function applyRemote(data){
   }
   _applyingRemote=false;
 }
-function startFirebaseSync(){
-  setSyncPill('ok','● Live');
-  setInterval(function(){
-    if(Date.now()<_syncIgnore)return;
-    fetch(FB_URL).then(function(r){return r.json();}).then(function(d){applyRemote(d);setSyncPill('ok','● Live');}).catch(function(){setSyncPill('err','✗ Offline');});
-  },4000);
-}
+function startFirebaseSync(){}
 
 /* ── INIT ── */
 function init(){
@@ -831,20 +792,9 @@ function init(){
   setTool('sel');
   setupEvents();
   setTimeout(fitScreen,50);
-  // Load from Firebase; fall back to seed data if empty
-  fetch(FB_URL).then(function(r){return r.json();}).then(function(data){
-    if(data&&data.pins&&data.pins.length){
-      applyRemote(data);
-    } else {
-      loadPins();
-      scheduleSync();
-    }
-    renderProductDrop();renderTimeline();
-    startFirebaseSync();
-  }).catch(function(){
-    loadPins();renderProductDrop();renderTimeline();
-    startFirebaseSync();
-  });
+  loadPins();
+  renderProductDrop();
+  renderTimeline();
 }
 
 /* ── USER CHIP ── */
