@@ -883,7 +883,26 @@ function applyRemote(data){
   try{
     function diff(a,b){return JSON.stringify(a)!==JSON.stringify(b);}
     var changed=false;
-    if(data.pins&&diff(data.pins,S.pins)){S.pins=data.pins;changed=true;}
+    if(data.pins&&diff(data.pins,S.pins)){
+      /* sanitize pins to ensure arrays are arrays (Firebase can sometimes serialize oddly) */
+      S.pins=data.pins.map(function(p){
+        return Object.assign({},p,{
+          tags:Array.isArray(p.tags)?p.tags:[],
+          replies:Array.isArray(p.replies)?p.replies:[],
+          votes:p.votes||0,
+          voted:!!p.voted,
+          time:p.time||'',
+          title:p.title||'',
+          txt:p.txt||'',
+          color:p.color||COLORS[0],
+          rmap_cat:p.rmap_cat||'planned',
+          link:p.link||'',
+          auth:p.auth||'Unknown',
+          av:p.av||'?'
+        });
+      });
+      changed=true;
+    }
     if(data.nodes&&diff(data.nodes,S.nodes)){S.nodes=data.nodes;changed=true;}
     if(data.connections&&diff(data.connections,S.connections)){S.connections=data.connections;changed=true;}
     if(data.sessions&&diff(data.sessions,S.sessions)){S.sessions=data.sessions;changed=true;}
@@ -1948,7 +1967,7 @@ function activatePin(id){
   renderPins();renderFeedback();
   const p=S.pins.find(x=>x.id===id);
   if(p&&p.sessId)highlightSess(p.sessId);
-  if(p){const w=$('cwrap'),tz=Math.max(1.1,S.zoom);animTo(tz,w.offsetWidth/2-(p.x+12)*tz,w.offsetHeight/2-(p.y+12)*tz);}
+  if(p){const w=$('cwrap'),tz=Math.max(1.4,S.zoom);animTo(tz,w.offsetWidth/2-(p.x+12)*tz,w.offsetHeight/2-(p.y+12)*tz);}
   setTimeout(()=>{
     const card=document.querySelector(`.fcard[data-id="${id}"]`);
     if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -2050,6 +2069,7 @@ function renderFeedback(){
   }
   // Pin list
   sortedPins().forEach(p=>{
+    try{
     const isAct=p.id===S.activePinId,isExp=p.id===S.expandedPinId;
     const isOwn=p.userId===S.user.id||S.isAdmin;
     const isEditing=S.editingPinId===p.id;
@@ -2067,6 +2087,19 @@ function renderFeedback(){
       eb.onmouseenter=()=>eb.style.color='var(--text)';eb.onmouseleave=()=>eb.style.color='var(--muted2)';
       eb.onclick=e=>{e.stopPropagation();S.editingPinId=p.id;S.activePinId=p.id;S.expandedPinId=p.id;renderFeedback();setTimeout(()=>{const et=$('edit-title-'+p.id);if(et)et.focus();},20);};
       meta.appendChild(eb);
+      /* Delete button */
+      const db=mk('span','');db.textContent='🗑';db.title='Delete comment';
+      db.style.cssText='cursor:pointer;font-size:11px;color:var(--muted2);padding:1px 4px;border-radius:3px;transition:color .12s;margin-left:2px;';
+      db.onmouseenter=()=>db.style.color='#ef4444';db.onmouseleave=()=>db.style.color='var(--muted2)';
+      db.onclick=e=>{
+        e.stopPropagation();
+        if(!confirm('Delete this comment?'))return;
+        S.pins=S.pins.filter(function(x){return x.id!==p.id;});
+        if(S.activePinId===p.id)S.activePinId=null;
+        if(S.expandedPinId===p.id)S.expandedPinId=null;
+        renderPins();renderFeedback();renderRoadmap();updateStats();scheduleSync();
+      };
+      meta.appendChild(db);
     }
     body.appendChild(meta);
     if(isEditing){
@@ -2129,6 +2162,7 @@ function renderFeedback(){
     }
     if(!isEditing)card.addEventListener('click',()=>activatePin(p.id));
     list.appendChild(card);
+    }catch(e){console.error('renderFeedback pin error:',e,p);}
   });
 }
 
