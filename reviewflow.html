@@ -163,8 +163,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .pin-wrap{position:absolute;}
 .pin{position:absolute;width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.22);transition:transform .18s,box-shadow .18s;}
 .pin:hover{transform:rotate(-45deg) scale(1.18);}
-@keyframes pinPop{0%{transform:rotate(-45deg) scale(1);}55%{transform:rotate(-45deg) scale(1.38);}100%{transform:rotate(-45deg) scale(1.25);}}
-.pin.active{transform:rotate(-45deg) scale(1.25);box-shadow:0 0 0 3px rgba(0,0,0,.1),0 4px 14px rgba(0,0,0,.28);animation:pinPop .28s cubic-bezier(.34,1.56,.64,1);}
+.pin.active{transform:rotate(-45deg) scale(1.25);box-shadow:0 0 0 3px rgba(0,0,0,.1),0 4px 14px rgba(0,0,0,.28);}
 .pin.sess-pin{border-radius:5px;}
 .pnum{transform:rotate(45deg);font-size:9px;font-weight:800;color:#fff;}
 .pin-label{position:absolute;left:28px;top:-3px;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 8px 2px 4px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.08);max-width:200px;}
@@ -496,9 +495,10 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="fphead">
     <div class="fptit">Comments</div>
     <div class="fpcnt" id="fpcnt">0</div>
-    <select class="fpsort" id="sort-sel" onchange="sortBy(this.value)">
+    <select class="fpsort" onchange="sortBy(this.value)">
       <option value="votes">Top</option>
       <option value="newest">New</option>
+      <option value="status">Status</option>
     </select>
   </div>
   <div class="ftags" id="tag-filters"></div>
@@ -742,7 +742,6 @@ const S={
   selBox:null,selEls:[],
   selRmapCat:'planned',rtmPinId:null,rmapActiveTag:null,editingPinId:null,tagMgrOpen:false,
   _ctxPt:null,_renameTarget:null,_newVerProdId:null,
-  bgImage:'',annImages:[],
 };
 
 /* ── UTILS ── */
@@ -759,30 +758,15 @@ function cvPt(e){const r=$('cwrap').getBoundingClientRect();return{x:(e.clientX-
 function wc(){const w=$('cwrap');return{x:w.offsetWidth/2,y:w.offsetHeight/2};}
 function fmtMentions(t){return(t||'').replace(/@(\w+)/g,'<span class="r-txt" style="color:var(--sel);font-weight:600">@$1</span>');}
 
-/* ── PERSISTENCE: localStorage + Firebase ── */
+/* ── FIREBASE SYNC ── */
 const FB_URL='https://resreview-1d13f-default-rtdb.firebaseio.com/state.json';
-const LS_KEY='resreview_v3';
 let _syncTimer=null,_syncIgnore=0,_applyingRemote=false;
 
-/* Payload for Firebase (no images - too large) */
-function getFBPayload(){
-  return {pins:S.pins,nodes:S.nodes,connections:S.connections,
-    sessions:S.sessions,products:S.products,versions:S.versions};
+function scheduleSync(){
+  if(_applyingRemote)return;
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(pushToFirebase,800);
 }
-/* Full payload for localStorage (includes images) */
-function getLSPayload(){
-  return Object.assign(getFBPayload(),{bgImage:S.bgImage,annImages:S.annImages});
-}
-
-/* localStorage helpers */
-function saveLocal(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify(getLSPayload()));}catch(e){console.warn('localStorage save failed:',e);}
-}
-function loadLocal(){
-  try{var d=localStorage.getItem(LS_KEY);return d?JSON.parse(d):null;}catch(e){return null;}
-}
-
-/* Sync pill UI */
 function setSyncPill(state,msg){
   var p=document.getElementById('sync-pill');if(!p)return;
   p.textContent=msg;
@@ -790,164 +774,54 @@ function setSyncPill(state,msg){
   else if(state==='err'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #f87171;color:#991b1b;background:#fee2e2;letter-spacing:.03em;transition:all .3s;';}
   else{p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;';}
 }
-
-/* scheduleSync: save locally immediately, push to Firebase soon after */
-function scheduleSync(){
-  if(_applyingRemote)return;
-  saveLocal();
-  _syncIgnore=Date.now()+8000; /* block poll immediately so it can't overwrite local changes */
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(pushToFirebase,1000);
-}
-
 function pushToFirebase(){
-  _syncIgnore=Date.now()+5000;
-  setSyncPill('','saving…');
-  var payload=JSON.stringify(getFBPayload());
+  _syncIgnore=Date.now()+3000;
+  setSyncPill('','⟳ Saving…');
+  var payload=JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
+    sessions:S.sessions,products:S.products,versions:S.versions});
   fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
   .then(function(r){
     if(!r.ok){r.text().then(function(t){
-      console.error('Firebase PUT failed:',r.status,t);
-      setSyncPill('err','✗ err '+r.status);
+      console.error('Firebase write failed:',r.status,t);
+      setSyncPill('err','✗ Sync '+r.status);
+      toast('⚠ Sync error: '+r.status);
     });}
     else{
-      console.log('Firebase OK, pins:',S.pins.length);
-      setSyncPill('ok','✓ saved');
-      setTimeout(function(){setSyncPill('ok','● live');},2500);
+      console.log('Firebase sync OK, pins:',S.pins.length);
+      setSyncPill('ok','✓ Saved');
+      setTimeout(function(){setSyncPill('','● Live');},3000);
     }
   })
   .catch(function(e){
-    console.error('Firebase error:',e);
-    setSyncPill('err','✗ offline');
+    console.error('Firebase fetch error:',e);
+    setSyncPill('err','✗ No connection');
+    toast('⚠ Sync error — check console');
   });
 }
-
-/* Restore the main canvas background image */
-function renderBgImage(){
-  if(!S.bgImage)return;
-  try{
-    var mi=document.getElementById('main-img');
-    if(mi){
-      mi.style.backgroundImage="url("+JSON.stringify(S.bgImage)+")";
-      mi.style.backgroundSize='cover';
-      mi.style.backgroundPosition='center';
-      var ph=document.getElementById('img-ph');
-      if(ph)ph.style.display='none';
-    }
-  }catch(e){}
-}
-
-/* Restore placed annotation images */
-function renderAnnImages(){
-  if(!S.annImages||!S.annImages.length)return;
-  try{
-    S.annImages.forEach(function(img){
-      _placeImageEl(img);
-    });
-  }catch(e){}
-}
-
-/* Create a-img DOM element from saved image data (does NOT push to S.annImages) */
-function _placeImageEl(img){
-  var el=mk('div','a-img');
-  el.style.left=img.x+'px';el.style.top=img.y+'px';el.style.width='300px';el.style.height='188px';el.style.backgroundSize='cover';el.style.backgroundPosition='center';el.style.backgroundImage='url("'+img.url+'")';el.style.borderRadius='6px';el.style.border='2px solid '+(img.own==='me'?S.user.color:'#aaa');el.style.cursor='move';el.style.zIndex='10';el.style.position='absolute';
-  el.dataset.own=img.own||'me';
-  el.dataset.annid=img.id;
-  annTag(el);annClick(el);
-  makeDraggable(el,function(){
-    img.x=parseFloat(el.style.left);img.y=parseFloat(el.style.top);
-    saveLocal();
-  });
-  var lbtn=mk('div','');
-  lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
-  lbtn.textContent='🔓';lbtn.title='Lock element';
-  lbtn.addEventListener('click',function(e){
-    e.stopPropagation();
-    var locked=el.dataset.locked==='true';
-    if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
-    el.dataset.locked=locked?'false':'true';
-    lbtn.textContent=locked?'🔓':'🔒';
-    el.style.cursor=locked?'move':'default';
-    el.style.opacity=locked?'1':'0.85';
-  });
-  el.appendChild(lbtn);
-  var annots=document.getElementById('annots');
-  if(annots)annots.appendChild(el);
-}
-
-/* applyRemote: apply state from Firebase or localStorage */
 function applyRemote(data){
   if(!data)return;
   _applyingRemote=true;
-  try{
-    function diff(a,b){return JSON.stringify(a)!==JSON.stringify(b);}
-    var changed=false;
-    if(data.pins&&diff(data.pins,S.pins)){
-      /* sanitize pins to ensure arrays are arrays (Firebase can sometimes serialize oddly) */
-      S.pins=data.pins.map(function(p){
-        return Object.assign({},p,{
-          tags:Array.isArray(p.tags)?p.tags:[],
-          replies:Array.isArray(p.replies)?p.replies:[],
-          votes:p.votes||0,
-          voted:!!p.voted,
-          time:p.time||'',
-          title:p.title||'',
-          txt:p.txt||'',
-          color:p.color||COLORS[0],
-          rmap_cat:p.rmap_cat||'planned',
-          link:p.link||'',
-          auth:p.auth||'Unknown',
-          av:p.av||'?'
-        });
-      });
-      changed=true;
-    }
-    if(data.nodes&&diff(data.nodes,S.nodes)){S.nodes=data.nodes;changed=true;}
-    if(data.connections&&diff(data.connections,S.connections)){S.connections=data.connections;changed=true;}
-    if(data.sessions&&diff(data.sessions,S.sessions)){S.sessions=data.sessions;changed=true;}
-    if(data.products&&diff(data.products,S.products)){S.products=data.products;changed=true;}
-    if(data.versions&&diff(data.versions,S.versions)){S.versions=data.versions;changed=true;}
-    /* Images (localStorage only) */
-    if(data.bgImage&&data.bgImage!==S.bgImage){S.bgImage=data.bgImage;renderBgImage();}
-    if(data.annImages&&diff(data.annImages,S.annImages)){
-      S.annImages=data.annImages;
-      /* Clear existing a-img elements and re-render */
-      var annots=document.getElementById('annots');
-      if(annots){Array.from(annots.querySelectorAll('.a-img')).forEach(function(el){el.remove();});}
-      renderAnnImages();
-    }
-    if(changed){
-      S.nextNum=S.pins.reduce(function(m,p){return Math.max(m,p.num);},0)+1;
-      renderPins();renderFeedback();renderRoadmap();renderTimeline();renderProductDrop();updateStats();
-      try{renderConns();renderNodes();}catch(e){}
-    }
-  }catch(e){console.warn('applyRemote error:',e);}
+  var changed=false;
+  function diff(a,b){return JSON.stringify(a)!==JSON.stringify(b);}
+  if(data.pins&&diff(data.pins,S.pins)){S.pins=data.pins;changed=true;}
+  if(data.nodes&&diff(data.nodes,S.nodes)){S.nodes=data.nodes;changed=true;}
+  if(data.connections&&diff(data.connections,S.connections)){S.connections=data.connections;changed=true;}
+  if(data.sessions&&diff(data.sessions,S.sessions)){S.sessions=data.sessions;changed=true;}
+  if(data.products&&diff(data.products,S.products)){S.products=data.products;changed=true;}
+  if(data.versions&&diff(data.versions,S.versions)){S.versions=data.versions;changed=true;}
+  if(changed){
+    S.nextNum=S.pins.reduce(function(m,p){return Math.max(m,p.num);},0)+1;
+    renderPins();renderFeedback();renderRoadmap();renderTimeline();renderProductDrop();updateStats();
+    try{renderConns();renderNodes();}catch(e){}
+  }
   _applyingRemote=false;
 }
-
-/* Poll Firebase every 5s for other users changes */
 function startFirebaseSync(){
-  setSyncPill('ok','● live');
+  setSyncPill('ok','● Live');
   setInterval(function(){
     if(Date.now()<_syncIgnore)return;
-    fetch(FB_URL)
-      .then(function(r){return r.json();})
-      .then(function(d){
-        /* Re-check ignore flag — fetch may have resolved after a local change set it */
-        if(Date.now()<_syncIgnore)return;
-        if(d&&d.pins){
-          /* Only apply if Firebase has same or more pins than local.
-             If local has more, we have unsaved additions — don't overwrite. */
-          if(d.pins.length>=S.pins.length){
-            if(S.bgImage)d.bgImage=S.bgImage;
-            if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
-            applyRemote(d);
-          }
-          setSyncPill('ok','● live');
-        }
-      })
-      .catch(function(){setSyncPill('err','✗ offline');});
-  },5000);
+    fetch(FB_URL).then(function(r){return r.json();}).then(function(d){applyRemote(d);setSyncPill('ok','● Live');}).catch(function(){setSyncPill('err','✗ Offline');});
+  },4000);
 }
 
 /* ── INIT ── */
@@ -957,56 +831,20 @@ function init(){
   setTool('sel');
   setupEvents();
   setTimeout(fitScreen,50);
-  setSyncPill('','loading…');
-
-  /* Load order: Firebase (latest pins from everyone) + localStorage (images) */
-  var localData=loadLocal();
-
-  fetch(FB_URL)
-    .then(function(r){return r.json();})
-    .then(function(fbData){
-      var hasFB=fbData&&fbData.pins&&fbData.pins.length>0;
-      var hasLocal=localData&&localData.pins&&localData.pins.length>0;
-
-      if(hasFB){
-        /* Use Firebase pins (most authoritative) */
-        applyRemote(fbData);
-        /* Also restore images from localStorage */
-        if(localData){
-          if(localData.bgImage&&!S.bgImage){S.bgImage=localData.bgImage;renderBgImage();}
-          if(localData.annImages&&localData.annImages.length&&!S.annImages.length){S.annImages=localData.annImages;renderAnnImages();}
-        }
-        saveLocal();
-        setSyncPill('ok','● live');
-      } else if(hasLocal){
-        /* Firebase empty, use local data */
-        applyRemote(localData);
-        renderBgImage();
-        renderAnnImages();
-        scheduleSync();
-        setSyncPill('ok','● live');
-      } else {
-        /* Fresh start - load seed data */
-        loadPins();
-        scheduleSync();
-        setSyncPill('ok','● live');
-      }
-      renderProductDrop();renderTimeline();
-      startFirebaseSync();
-    })
-    .catch(function(){
-      /* Firebase unreachable */
-      setSyncPill('err','✗ offline (local only)');
-      if(localData&&localData.pins&&localData.pins.length>0){
-        applyRemote(localData);
-        renderBgImage();
-        renderAnnImages();
-      } else {
-        loadPins();
-      }
-      renderProductDrop();renderTimeline();
-      startFirebaseSync();
-    });
+  // Load from Firebase; fall back to seed data if empty
+  fetch(FB_URL).then(function(r){return r.json();}).then(function(data){
+    if(data&&data.pins&&data.pins.length){
+      applyRemote(data);
+    } else {
+      loadPins();
+      scheduleSync();
+    }
+    renderProductDrop();renderTimeline();
+    startFirebaseSync();
+  }).catch(function(){
+    loadPins();renderProductDrop();renderTimeline();
+    startFirebaseSync();
+  });
 }
 
 /* ── USER CHIP ── */
@@ -1644,28 +1482,34 @@ function confirmImgOwn(){
 }
 function placeShot(url,own,pt){
   if(!url)return;
-  var imgData={id:'img'+Date.now(),url:url,own:own||'me',x:pt.x,y:pt.y};
-  S.annImages=S.annImages||[];
-  S.annImages.push(imgData);
-  _placeImageEl(imgData);
-  saveLocal();
+  const el=mk('div','a-img');
+  el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;width:300px;height:188px;background:url(\''+url+'\') center/cover;border-radius:6px;border:2px solid '+(own==='me'?S.user.color:'#aaa')+';cursor:move;z-index:10;';
+  el.dataset.own=own;
+  annTag(el);annClick(el);makeDraggable(el);
+  // Lock button
+  const lbtn=mk('div','');
+  lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
+  lbtn.textContent='🔓';lbtn.title='Lock element';
+  lbtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    const locked=el.dataset.locked==='true';
+    if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
+    el.dataset.locked=locked?'false':'true';
+    lbtn.textContent=locked?'🔓':'🔒';
+    el.style.cursor=locked?'move':'default';
+    el.style.opacity=locked?'1':'0.85';
+  });
+  el.appendChild(lbtn);
+  $('annots').appendChild(el);
 }
 function loadCanvasImage(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=ev=>{
-    const url=ev.target.result;
     const mi=$('main-img');
     if(mi&&mi.style.backgroundImage&&mi.style.backgroundImage!==''&&mi.style.backgroundImage!=='none'){
-      S.pendingImgUrl=url;S.pastedPt=null;openModal('img-own-modal');
-    }else{
-      mi.style.backgroundImage="url("+JSON.stringify(url)+")";
-      mi.style.backgroundSize='cover';
-      mi.style.backgroundPosition='center';
-      const ph=$('img-ph');if(ph)ph.style.display='none';
-      S.bgImage=url;
-      saveLocal();
-    }
+      S.pendingImgUrl=ev.target.result;S.pastedPt=null;openModal('img-own-modal');
+    }else{mi.style.backgroundImage=`url('${ev.target.result}')`;mi.style.backgroundSize='cover';mi.style.backgroundPosition='center';const ph=$('img-ph');if(ph)ph.style.display='none';}
   };r.readAsDataURL(file);
 }
 
@@ -1904,22 +1748,11 @@ function confirmPin(){
   const title=($('draft-title')?.value||'').trim();if(!title){toast('Add a title');return;}
   if(!S.pendingPin){toast('Click the canvas first');return;}
   const ci=COLORS.indexOf(S.user.color);
-  const newPinId='p'+Date.now();
-  S.pins.push(mkPin(newPinId,S.nextNum++,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
+  S.pins.push(mkPin('p'+Date.now(),S.nextNum++,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
     S.user.name,S.user.av,S.user.id,S.activeSessionId,title,
     ($('draft-body')?.value||'').trim(),dc(S.pendingTags),0,
     new Date().toISOString().slice(0,10),false,'planned',($('draft-link')?.value||'').trim()));
-  S.pendingPin=null;S.pendingTags=[];
-  S.sortMode='newest'; /* new pin appears first in sidebar */
-  renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
-  /* scroll sidebar to the new pin card */
-  setTimeout(function(){
-    var card=document.querySelector('.fcard[data-id="'+newPinId+'"]');
-    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
-    var list=document.getElementById('flist');
-    if(list)list.scrollTop=0;
-  },50);
-  activatePin(newPinId);
+  S.pendingPin=null;S.pendingTags=[];renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
 }
 function buildTagPicker(){
   const c=$('tag-pick-wrap');if(!c)return;c.innerHTML='';
@@ -1956,7 +1789,7 @@ function renderPins(){
     lbl.innerHTML=`<span class="pin-label-txt">${p.auth}</span>${sess?`<span class="pin-label-sess">${sess.name}</span>`:''}`;
     wrap.appendChild(pin);wrap.appendChild(lbl);
     pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
-    makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);scheduleSync();});
+    makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
     cont.appendChild(wrap);
   });
 }
@@ -1966,7 +1799,7 @@ function activatePin(id){
   renderPins();renderFeedback();
   const p=S.pins.find(x=>x.id===id);
   if(p&&p.sessId)highlightSess(p.sessId);
-  if(p){const w=$('cwrap'),tz=Math.max(1.4,S.zoom);animTo(tz,w.offsetWidth/2-(p.x+12)*tz,w.offsetHeight/2-(p.y+12)*tz);}
+  if(p){const w=$('cwrap'),tz=Math.max(1.1,S.zoom);animTo(tz,w.offsetWidth/2-(p.x+12)*tz,w.offsetHeight/2-(p.y+12)*tz);}
   setTimeout(()=>{
     const card=document.querySelector(`.fcard[data-id="${id}"]`);
     if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -1979,23 +1812,11 @@ function updateStats(){
 }
 
 /* ── FEEDBACK PANEL ── */
-function sortBy(mode){
-  S.sortMode=mode;
-  var sel=document.getElementById('sort-sel');
-  if(sel)sel.value=mode;
-  renderFeedback();
-}
+function sortBy(mode){S.sortMode=mode;renderFeedback();}
 function sortedPins(){
   let ps=[...S.pins];
   if(S.activeTag)ps=ps.filter(p=>p.tags.includes(S.activeTag));
-  return ps.sort(function(a,b){
-    if(S.sortMode==='newest'){
-      return (b.time||'').localeCompare(a.time||'');
-    }
-    /* Top: sort by votes desc, then by time desc as tiebreaker */
-    var vd=b.votes-a.votes;
-    return vd!==0?vd:(b.time||'').localeCompare(a.time||'');
-  });
+  return ps.sort((a,b)=>S.sortMode==='newest'?b.time.localeCompare(a.time):b.votes-a.votes);
 }
 function renderTagFilters(){
   const c=$('tag-filters');if(!c)return;c.innerHTML='';
@@ -2080,7 +1901,6 @@ function renderFeedback(){
   }
   // Pin list
   sortedPins().forEach(p=>{
-    try{
     const isAct=p.id===S.activePinId,isExp=p.id===S.expandedPinId;
     const isOwn=p.userId===S.user.id||S.isAdmin;
     const isEditing=S.editingPinId===p.id;
@@ -2098,19 +1918,6 @@ function renderFeedback(){
       eb.onmouseenter=()=>eb.style.color='var(--text)';eb.onmouseleave=()=>eb.style.color='var(--muted2)';
       eb.onclick=e=>{e.stopPropagation();S.editingPinId=p.id;S.activePinId=p.id;S.expandedPinId=p.id;renderFeedback();setTimeout(()=>{const et=$('edit-title-'+p.id);if(et)et.focus();},20);};
       meta.appendChild(eb);
-      /* Delete button */
-      const db=mk('span','');db.textContent='🗑';db.title='Delete comment';
-      db.style.cssText='cursor:pointer;font-size:11px;color:var(--muted2);padding:1px 4px;border-radius:3px;transition:color .12s;margin-left:2px;';
-      db.onmouseenter=()=>db.style.color='#ef4444';db.onmouseleave=()=>db.style.color='var(--muted2)';
-      db.onclick=e=>{
-        e.stopPropagation();
-        if(!confirm('Delete this comment?'))return;
-        S.pins=S.pins.filter(function(x){return x.id!==p.id;});
-        if(S.activePinId===p.id)S.activePinId=null;
-        if(S.expandedPinId===p.id)S.expandedPinId=null;
-        renderPins();renderFeedback();renderRoadmap();updateStats();scheduleSync();
-      };
-      meta.appendChild(db);
     }
     body.appendChild(meta);
     if(isEditing){
@@ -2173,7 +1980,6 @@ function renderFeedback(){
     }
     if(!isEditing)card.addEventListener('click',()=>activatePin(p.id));
     list.appendChild(card);
-    }catch(e){console.error('renderFeedback pin error:',e,p);}
   });
 }
 
