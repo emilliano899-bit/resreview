@@ -85,6 +85,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hbtn:hover{border-color:var(--border2);color:var(--text);background:var(--hover);}
 .hbtn.lit{background:var(--text);color:#fff;border-color:var(--text);}
 .admin-pill{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;border:1px solid #fbbf24;color:#92400e;background:#fef9c3;letter-spacing:.05em;}
+.sync-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;}
 
 /* ── Main layout ── */
 .main{display:flex;flex:1;overflow:hidden;position:relative;}
@@ -403,6 +404,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="vsep"></div>
   <button class="hbtn" id="admin-btn" onclick="toggleAdmin()">Admin</button>
   <span class="admin-pill" id="admin-pill" style="display:none">ADMIN</span>
+  <span class="sync-pill" id="sync-pill" title="Firebase sync status">⟳ Connecting…</span>
 </header>
 
 <!-- MAIN -->
@@ -765,16 +767,36 @@ function scheduleSync(){
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(pushToFirebase,800);
 }
+function setSyncPill(state,msg){
+  var p=document.getElementById('sync-pill');if(!p)return;
+  p.textContent=msg;
+  if(state==='ok'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #4ade80;color:#166534;background:#dcfce7;letter-spacing:.03em;transition:all .3s;';}
+  else if(state==='err'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #f87171;color:#991b1b;background:#fee2e2;letter-spacing:.03em;transition:all .3s;';}
+  else{p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;';}
+}
 function pushToFirebase(){
   _syncIgnore=Date.now()+3000;
+  setSyncPill('','⟳ Saving…');
   var payload=JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
     sessions:S.sessions,products:S.products,versions:S.versions});
   fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
   .then(function(r){
-    if(!r.ok){r.text().then(function(t){console.error('Firebase write failed:',r.status,t);toast('⚠ Sync error: '+r.status);});}
-    else{console.log('Firebase sync OK, pins:',S.pins.length);}
+    if(!r.ok){r.text().then(function(t){
+      console.error('Firebase write failed:',r.status,t);
+      setSyncPill('err','✗ Sync '+r.status);
+      toast('⚠ Sync error: '+r.status);
+    });}
+    else{
+      console.log('Firebase sync OK, pins:',S.pins.length);
+      setSyncPill('ok','✓ Saved');
+      setTimeout(function(){setSyncPill('','● Live');},3000);
+    }
   })
-  .catch(function(e){console.error('Firebase fetch error:',e);toast('⚠ Sync error — check console');});
+  .catch(function(e){
+    console.error('Firebase fetch error:',e);
+    setSyncPill('err','✗ No connection');
+    toast('⚠ Sync error — check console');
+  });
 }
 function applyRemote(data){
   if(!data)return;
@@ -795,10 +817,10 @@ function applyRemote(data){
   _applyingRemote=false;
 }
 function startFirebaseSync(){
-  // Poll every 4 seconds for updates from other users
+  setSyncPill('ok','● Live');
   setInterval(function(){
     if(Date.now()<_syncIgnore)return;
-    fetch(FB_URL).then(function(r){return r.json();}).then(applyRemote).catch(function(){});
+    fetch(FB_URL).then(function(r){return r.json();}).then(function(d){applyRemote(d);setSyncPill('ok','● Live');}).catch(function(){setSyncPill('err','✗ Offline');});
   },4000);
 }
 
