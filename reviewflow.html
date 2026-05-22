@@ -1191,9 +1191,17 @@ function pickVer(vid){
 function applyVerImg(){
   const el=$('main-img');if(!el)return;
   const url=VER_IMAGES[S.curVer];
-  if(url){el.style.backgroundImage=`url('${url}')`;el.style.backgroundSize='cover';el.style.backgroundPosition='center';}
-  else{el.style.backgroundImage='';}
-  const ph=$('img-ph');if(ph)ph.style.display=url?'none':'flex';
+  if(url){
+    el.style.backgroundImage=`url('${url}')`;
+    el.style.backgroundSize='cover';el.style.backgroundPosition='center';
+    const ph=$('img-ph');if(ph)ph.style.display='none';
+  } else if(S.bgImage){
+    /* user-uploaded background — keep it visible */
+    renderBgImage();
+  } else {
+    el.style.backgroundImage='';
+    const ph=$('img-ph');if(ph)ph.style.display='flex';
+  }
 }
 function openAddProduct(){$('prod-name-in').value='';openModal('prod-modal');}
 function confirmAddProduct(){
@@ -2478,12 +2486,4 @@ function renderTimeline(){
     tl.appendChild(it);
   });
   if(S.isAdmin){
-    const add=mk('div','tadd','<span>+</span> Add version');
-    add.onclick=()=>openNewVer(S.activeProductId);tl.appendChild(add);
-  }
-}
-
-document.addEventListener("DOMContentLoaded",init);
-</script>
-</body>
-</html>
+    const add=mk('div','tadd','<span>+</span> Add
