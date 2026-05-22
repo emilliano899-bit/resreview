@@ -742,7 +742,7 @@ const S={
   selBox:null,selEls:[],
   selRmapCat:'planned',rtmPinId:null,rmapActiveTag:null,editingPinId:null,tagMgrOpen:false,
   _ctxPt:null,_renameTarget:null,_newVerProdId:null,
-  bgImage:'',annImages:[],shapes:[],
+  bgImage:'',annImages:[],
 };
 
 /* ── UTILS ── */
@@ -771,7 +771,7 @@ function getFBPayload(){
 }
 /* Full payload for localStorage (includes images) */
 function getLSPayload(){
-  return Object.assign(getFBPayload(),{bgImage:S.bgImage,annImages:S.annImages,shapes:S.shapes});
+  return Object.assign(getFBPayload(),{bgImage:S.bgImage,annImages:S.annImages});
 }
 
 /* localStorage helpers */
@@ -911,18 +911,10 @@ function applyRemote(data){
     if(data.bgImage&&data.bgImage!==S.bgImage){S.bgImage=data.bgImage;renderBgImage();}
     if(data.annImages&&diff(data.annImages,S.annImages)){
       S.annImages=data.annImages;
+      /* Clear existing a-img elements and re-render */
       var annots=document.getElementById('annots');
       if(annots){Array.from(annots.querySelectorAll('.a-img')).forEach(function(el){el.remove();});}
       renderAnnImages();
-    }
-    if(data.shapes&&diff(data.shapes,S.shapes)){
-      S.shapes=data.shapes;
-      /* Clear and re-render shapes */
-      var annots2=document.getElementById('annots');
-      var svg2=document.getElementById('ann-svg');
-      if(annots2){Array.from(annots2.querySelectorAll('.a-rect,.a-ellipse,.a-label')).forEach(function(el){el.remove();});}
-      if(svg2){Array.from(svg2.querySelectorAll('line[data-shape-id],path[data-shape-id]')).forEach(function(el){el.remove();});}
-      restoreShapes();
     }
     if(changed){
       S.nextNum=S.pins.reduce(function(m,p){return Math.max(m,p.num);},0)+1;
@@ -958,79 +950,6 @@ function startFirebaseSync(){
   },5000);
 }
 
-/* ── SHAPE PERSISTENCE ── */
-function captureShape(el){
-  if(!S.shapes)S.shapes=[];
-  var id='sh'+Date.now()+Math.floor(Math.random()*9999);
-  el.dataset.shapeId=id;
-  var isSvg=(el.tagName==='line'||el.tagName==='path'||el.tagName==='LINE'||el.tagName==='PATH');
-  var data;
-  if(isSvg){
-    var attrs={};
-    Array.from(el.attributes).forEach(function(a){if(a.name!=='data-shape-id')attrs[a.name]=a.value;});
-    data={id:id,isSvg:true,tag:el.tagName.toLowerCase(),attrs:attrs};
-  }else{
-    var type=el.classList.contains('a-rect')?'rect':el.classList.contains('a-ellipse')?'ellipse':'label';
-    data={id:id,isSvg:false,type:type,css:el.style.cssText,html:el.innerHTML,
-      sessId:el.dataset.sessId||'',userId:el.dataset.userId||''};
-  }
-  S.shapes.push(data);
-  saveLocal();
-}
-function updateShapePos(el){
-  if(!el.dataset.shapeId||!S.shapes)return;
-  var sh=S.shapes.find(function(s){return s.id===el.dataset.shapeId;});
-  if(!sh)return;
-  if(sh.isSvg){Array.from(el.attributes).forEach(function(a){sh.attrs[a.name]=a.value;});}
-  else{sh.css=el.style.cssText;if(sh.type==='label')sh.html=el.innerHTML;}
-  saveLocal();
-}
-function restoreShapes(){
-  if(!S.shapes||!S.shapes.length)return;
-  var annots=document.getElementById('annots');
-  var svg=document.getElementById('ann-svg');
-  if(!annots||!svg)return;
-  S.shapes.forEach(function(sh){
-    try{
-      if(sh.isSvg){
-        var el=document.createElementNS('http://www.w3.org/2000/svg',sh.tag);
-        Object.entries(sh.attrs).forEach(function(kv){el.setAttribute(kv[0],kv[1]);});
-        el.dataset.shapeId=sh.id;
-        el.setAttribute('pointer-events','stroke');
-        el.addEventListener('click',function(e){
-          if(S.tool!=='sel')return;e.stopPropagation();
-          selEl(el);if(el.dataset.sessId)highlightSess(el.dataset.sessId);
-        });
-        try{var stk=el.getAttribute('stroke');if(stk)ensureMarker(stk);}catch(e){}
-        makeSvgDraggable(el);
-        svg.appendChild(el);
-      }else{
-        var cls=sh.type==='rect'?'a-rect':sh.type==='ellipse'?'a-ellipse':'a-label';
-        var el=document.createElement('div');
-        el.className=cls;el.style.cssText=sh.css;
-        if(sh.html!==undefined)el.innerHTML=sh.html;
-        el.dataset.sessId=sh.sessId||'';
-        el.dataset.userId=sh.userId||'';
-        el.dataset.shapeId=sh.id;
-        el.addEventListener('click',function(e){
-          if(S.tool!=='sel')return;e.stopPropagation();
-          selEl(el);if(el.dataset.sessId)highlightSess(el.dataset.sessId);
-        });
-        if(sh.type==='label'){
-          el.ondblclick=function(e){
-            if(S.tool!=='sel')return;e.stopPropagation();
-            el.contentEditable='true';el.focus();
-            var rng=document.createRange();rng.selectNodeContents(el);
-            var sel2=window.getSelection();sel2.removeAllRanges();sel2.addRange(rng);
-          };
-        }
-        makeDraggable(el,function(){updateShapePos(el);});
-        annots.appendChild(el);
-      }
-    }catch(e){console.warn('restoreShapes error:',e,sh);}
-  });
-}
-
 /* ── INIT ── */
 function init(){
   updateChip();
@@ -1052,10 +971,10 @@ function init(){
       if(hasFB){
         /* Use Firebase pins (most authoritative) */
         applyRemote(fbData);
+        /* Also restore images from localStorage */
         if(localData){
           if(localData.bgImage&&!S.bgImage){S.bgImage=localData.bgImage;renderBgImage();}
           if(localData.annImages&&localData.annImages.length&&!S.annImages.length){S.annImages=localData.annImages;renderAnnImages();}
-          if(localData.shapes&&localData.shapes.length&&!S.shapes.length){S.shapes=localData.shapes;restoreShapes();}
         }
         saveLocal();
         setSyncPill('ok','● live');
@@ -1064,7 +983,6 @@ function init(){
         applyRemote(localData);
         renderBgImage();
         renderAnnImages();
-        restoreShapes();
         scheduleSync();
         setSyncPill('ok','● live');
       } else {
@@ -1083,7 +1001,6 @@ function init(){
         applyRemote(localData);
         renderBgImage();
         renderAnnImages();
-        restoreShapes();
       } else {
         loadPins();
       }
@@ -1855,8 +1772,7 @@ function onDown(e){
         const rng=document.createRange();rng.selectNodeContents(tl);
         const sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);
       };
-      makeDraggable(tl,function(){updateShapePos(tl);});
-      captureShape(tl);
+      makeDraggable(tl);
     };
     tl.addEventListener('blur',freezeText);
     $('annots').appendChild(tl);
@@ -1952,21 +1868,21 @@ function onUp(){
   }
   if(S.drawRect&&S.tempRect){
     S.drawRect=false;const el=S.tempRect;S.tempRect=null;S.rectStart=null;
-    if(parseFloat(el.style.width)>8&&parseFloat(el.style.height)>8){el.style.pointerEvents='';annTag(el);annClick(el);makeDraggable(el,function(){updateShapePos(el);});captureShape(el);}else el.remove();
+    if(parseFloat(el.style.width)>8&&parseFloat(el.style.height)>8){el.style.pointerEvents='';annTag(el);annClick(el);makeDraggable(el);}else el.remove();
   }
   if(S.drawEll&&S.tempEll){
     S.drawEll=false;const el=S.tempEll;S.tempEll=null;S.ellStart=null;
-    if(parseFloat(el.style.width)>8&&parseFloat(el.style.height)>8){el.style.pointerEvents='';annTag(el);annClick(el);makeDraggable(el,function(){updateShapePos(el);});captureShape(el);}else el.remove();
+    if(parseFloat(el.style.width)>8&&parseFloat(el.style.height)>8){el.style.pointerEvents='';annTag(el);annClick(el);makeDraggable(el);}else el.remove();
   }
   if(S.drawArrow&&S.tempArrow){
     S.drawArrow=false;const el=S.tempArrow;S.tempArrow=null;
     const dx=Math.abs(parseFloat(el.getAttribute('x2'))-parseFloat(el.getAttribute('x1')));
     const dy=Math.abs(parseFloat(el.getAttribute('y2'))-parseFloat(el.getAttribute('y1')));
-    if(dx>5||dy>5){annTag(el);annClick(el);makeSvgDraggable(el);captureShape(el);}else el.remove();S.arrowStart=null;
+    if(dx>5||dy>5){annTag(el);annClick(el);makeSvgDraggable(el);}else el.remove();S.arrowStart=null;
   }
   if(S.drawFree&&S.freePath){
     S.drawFree=false;
-    if(S.freePts.length>3){annTag(S.freePath);annClick(S.freePath);makeSvgDraggable(S.freePath);captureShape(S.freePath);}else S.freePath.remove();
+    if(S.freePts.length>3){annTag(S.freePath);annClick(S.freePath);makeSvgDraggable(S.freePath);}else S.freePath.remove();
     S.freePath=null;S.freePts=[];
   }
 }
@@ -2039,22 +1955,10 @@ function renderPins(){
     const lbl=mk('div','pin-label');
     lbl.innerHTML=`<span class="pin-label-txt">${p.auth}</span>${sess?`<span class="pin-label-sess">${sess.name}</span>`:''}`;
     wrap.appendChild(pin);wrap.appendChild(lbl);
-    pin.addEventListener('click',e=>{e.stopPropagation();activatePinFromCanvas(p.id);});
+    pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
     makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);scheduleSync();});
     cont.appendChild(wrap);
   });
-}
-/* Called from canvas pin click — scroll to comment but DON'T zoom canvas */
-function activatePinFromCanvas(id){
-  S.activePinId=id;S.expandedPinId=id;
-  renderPins();renderFeedback();
-  const p=S.pins.find(x=>x.id===id);
-  if(p&&p.sessId)highlightSess(p.sessId);
-  /* scroll sidebar to the card */
-  setTimeout(()=>{
-    const card=document.querySelector('.fcard[data-id="'+id+'"]');
-    if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
-  },80);
 }
 function activatePin(id){
   const wasOpen=S.activePinId===id&&S.expandedPinId===id;
@@ -2289,36 +2193,6 @@ function showView(view){
   const tb=$('tbar');if(tb)tb.style.display=view==='roadmap'?'none':'';
   if(view==='roadmap'){setTool('sel');renderRoadmap();}
 }
-function importUnresolved(){
-  /* Find previous version for this product */
-  var vers=S.versions.filter(function(v){return v.productId===S.activeProductId;});
-  var curIdx=vers.findIndex(function(v){return v.id===S.curVer;});
-  var srcPins=[];
-  if(curIdx>0){
-    /* Try seed data from previous version */
-    var prevId=vers[curIdx-1].id;
-    srcPins=(SEED[prevId]||[]).filter(function(p){return p.roadmap&&!p.resolved;});
-  }
-  /* Also grab any currently loaded roadmap pins not yet resolved */
-  if(!srcPins.length){
-    srcPins=S.pins.filter(function(p){return p.roadmap&&!p.resolved;});
-    if(!srcPins.length){toast('No unresolved roadmap tickets found');return;}
-    toast(srcPins.length+' unresolved ticket'+(srcPins.length>1?'s are':' is')+' already in the roadmap');
-    return;
-  }
-  var added=0;
-  srcPins.forEach(function(p){
-    if(S.pins.some(function(x){return x.title===p.title&&x.roadmap;}))return;
-    var np=Object.assign({},JSON.parse(JSON.stringify(p)),{
-      id:'p'+Date.now()+Math.floor(Math.random()*1e6),
-      num:S.nextNum++,votes:0,voted:false,replies:[],resolved:false,roadmap:true
-    });
-    S.pins.push(np);added++;
-  });
-  if(!added){toast('All unresolved tickets are already in the roadmap');return;}
-  renderPins();renderFeedback();renderRoadmap();updateStats();scheduleSync();
-  toast('Imported '+added+' unresolved ticket'+(added>1?'s':'')+' from previous version');
-}
 function renderRoadmap(){
   const body=$('rmap-body');if(!body)return;
   const allRmPins=S.pins.filter(p=>p.roadmap);
@@ -2331,7 +2205,6 @@ function renderRoadmap(){
     const isHiPri=t==='high-priority';
     tagFilterHtml+='<button onclick="S.rmapActiveTag='+(t===null?'null':("'"+t+"'"))+';renderRoadmap()" style="font-size:10px;padding:2px 8px;border-radius:8px;cursor:pointer;font-family:inherit;background:'+(on?'#1a1a1a':'transparent')+';color:'+(on?'#fff':'var(--muted)')+';border:'+(isHiPri?'2px':'1px')+' solid '+(on?'#1a1a1a':'var(--border2)')+'">'+lbl+'</button>';
   });
-  tagFilterHtml+='<button onclick="importUnresolved()" style="margin-left:auto;font-size:10px;padding:3px 10px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;flex-shrink:0;">⬇ Import unresolved</button>';
   tagFilterHtml+='</div>';
   let html=tagFilterHtml+'<div class="rmap-cols">';
   RMAP_CATS.forEach(cat=>{
