@@ -1236,7 +1236,7 @@ function confirmRename(){
   if(type==='product'){const p=S.products.find(x=>x.id===id);if(p)p.name=val;renderProductDrop();}
   else if(type==='version'){const v=S.versions.find(x=>x.id===id);if(v)v.name=val;renderTimeline();renderProductDrop();}
   else if(type==='session'){const s=S.sessions.find(x=>x.id===id);if(s)s.name=val;renderSessDrop();updateChip();}
-  closeModal('rename-modal');toast('Renamed to "'+val+'"');
+  closeModal('rename-modal');toast('Renamed to "'+val+'"');scheduleSync();
 }
 
 /* ── SESSIONS ── */
