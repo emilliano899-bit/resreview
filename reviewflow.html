@@ -742,6 +742,7 @@ const S={
   selBox:null,selEls:[],
   selRmapCat:'planned',rtmPinId:null,rmapActiveTag:null,editingPinId:null,tagMgrOpen:false,
   _ctxPt:null,_renameTarget:null,_newVerProdId:null,
+  bgImage:'',annImages:[],
 };
 
 /* ── UTILS ── */
@@ -758,15 +759,30 @@ function cvPt(e){const r=$('cwrap').getBoundingClientRect();return{x:(e.clientX-
 function wc(){const w=$('cwrap');return{x:w.offsetWidth/2,y:w.offsetHeight/2};}
 function fmtMentions(t){return(t||'').replace(/@(\w+)/g,'<span class="r-txt" style="color:var(--sel);font-weight:600">@$1</span>');}
 
-/* ── FIREBASE SYNC ── */
+/* ── PERSISTENCE: localStorage + Firebase ── */
 const FB_URL='https://resreview-1d13f-default-rtdb.firebaseio.com/state.json';
+const LS_KEY='resreview_v3';
 let _syncTimer=null,_syncIgnore=0,_applyingRemote=false;
 
-function scheduleSync(){
-  if(_applyingRemote)return;
-  clearTimeout(_syncTimer);
-  _syncTimer=setTimeout(pushToFirebase,800);
+/* Payload for Firebase (no images - too large) */
+function getFBPayload(){
+  return {pins:S.pins,nodes:S.nodes,connections:S.connections,
+    sessions:S.sessions,products:S.products,versions:S.versions};
 }
+/* Full payload for localStorage (includes images) */
+function getLSPayload(){
+  return Object.assign(getFBPayload(),{bgImage:S.bgImage,annImages:S.annImages});
+}
+
+/* localStorage helpers */
+function saveLocal(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(getLSPayload()));}catch(e){console.warn('localStorage save failed:',e);}
+}
+function loadLocal(){
+  try{var d=localStorage.getItem(LS_KEY);return d?JSON.parse(d):null;}catch(e){return null;}
+}
+
+/* Sync pill UI */
 function setSyncPill(state,msg){
   var p=document.getElementById('sync-pill');if(!p)return;
   p.textContent=msg;
@@ -774,54 +790,139 @@ function setSyncPill(state,msg){
   else if(state==='err'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #f87171;color:#991b1b;background:#fee2e2;letter-spacing:.03em;transition:all .3s;';}
   else{p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;';}
 }
+
+/* scheduleSync: save locally immediately, push to Firebase soon after */
+function scheduleSync(){
+  if(_applyingRemote)return;
+  saveLocal();
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(pushToFirebase,1000);
+}
+
 function pushToFirebase(){
-  _syncIgnore=Date.now()+3000;
-  setSyncPill('','⟳ Saving…');
-  var payload=JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
-    sessions:S.sessions,products:S.products,versions:S.versions});
+  _syncIgnore=Date.now()+5000;
+  setSyncPill('','saving…');
+  var payload=JSON.stringify(getFBPayload());
   fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
   .then(function(r){
     if(!r.ok){r.text().then(function(t){
-      console.error('Firebase write failed:',r.status,t);
-      setSyncPill('err','✗ Sync '+r.status);
-      toast('⚠ Sync error: '+r.status);
+      console.error('Firebase PUT failed:',r.status,t);
+      setSyncPill('err','✗ err '+r.status);
     });}
     else{
-      console.log('Firebase sync OK, pins:',S.pins.length);
-      setSyncPill('ok','✓ Saved');
-      setTimeout(function(){setSyncPill('','● Live');},3000);
+      console.log('Firebase OK, pins:',S.pins.length);
+      setSyncPill('ok','✓ saved');
+      setTimeout(function(){setSyncPill('ok','● live');},2500);
     }
   })
   .catch(function(e){
-    console.error('Firebase fetch error:',e);
-    setSyncPill('err','✗ No connection');
-    toast('⚠ Sync error — check console');
+    console.error('Firebase error:',e);
+    setSyncPill('err','✗ offline');
   });
 }
+
+/* Restore the main canvas background image */
+function renderBgImage(){
+  if(!S.bgImage)return;
+  try{
+    var mi=document.getElementById('main-img');
+    if(mi){
+      mi.style.backgroundImage="url("+JSON.stringify(S.bgImage)+")";
+      mi.style.backgroundSize='cover';
+      mi.style.backgroundPosition='center';
+      var ph=document.getElementById('img-ph');
+      if(ph)ph.style.display='none';
+    }
+  }catch(e){}
+}
+
+/* Restore placed annotation images */
+function renderAnnImages(){
+  if(!S.annImages||!S.annImages.length)return;
+  try{
+    S.annImages.forEach(function(img){
+      _placeImageEl(img);
+    });
+  }catch(e){}
+}
+
+/* Create a-img DOM element from saved image data (does NOT push to S.annImages) */
+function _placeImageEl(img){
+  var el=mk('div','a-img');
+  el.style.left=img.x+'px';el.style.top=img.y+'px';el.style.width='300px';el.style.height='188px';el.style.backgroundSize='cover';el.style.backgroundPosition='center';el.style.backgroundImage='url("'+img.url+'")';el.style.borderRadius='6px';el.style.border='2px solid '+(img.own==='me'?S.user.color:'#aaa');el.style.cursor='move';el.style.zIndex='10';el.style.position='absolute';
+  el.dataset.own=img.own||'me';
+  el.dataset.annid=img.id;
+  annTag(el);annClick(el);
+  makeDraggable(el,function(){
+    img.x=parseFloat(el.style.left);img.y=parseFloat(el.style.top);
+    saveLocal();
+  });
+  var lbtn=mk('div','');
+  lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
+  lbtn.textContent='🔓';lbtn.title='Lock element';
+  lbtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var locked=el.dataset.locked==='true';
+    if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
+    el.dataset.locked=locked?'false':'true';
+    lbtn.textContent=locked?'🔓':'🔒';
+    el.style.cursor=locked?'move':'default';
+    el.style.opacity=locked?'1':'0.85';
+  });
+  el.appendChild(lbtn);
+  var annots=document.getElementById('annots');
+  if(annots)annots.appendChild(el);
+}
+
+/* applyRemote: apply state from Firebase or localStorage */
 function applyRemote(data){
   if(!data)return;
   _applyingRemote=true;
-  var changed=false;
-  function diff(a,b){return JSON.stringify(a)!==JSON.stringify(b);}
-  if(data.pins&&diff(data.pins,S.pins)){S.pins=data.pins;changed=true;}
-  if(data.nodes&&diff(data.nodes,S.nodes)){S.nodes=data.nodes;changed=true;}
-  if(data.connections&&diff(data.connections,S.connections)){S.connections=data.connections;changed=true;}
-  if(data.sessions&&diff(data.sessions,S.sessions)){S.sessions=data.sessions;changed=true;}
-  if(data.products&&diff(data.products,S.products)){S.products=data.products;changed=true;}
-  if(data.versions&&diff(data.versions,S.versions)){S.versions=data.versions;changed=true;}
-  if(changed){
-    S.nextNum=S.pins.reduce(function(m,p){return Math.max(m,p.num);},0)+1;
-    renderPins();renderFeedback();renderRoadmap();renderTimeline();renderProductDrop();updateStats();
-    try{renderConns();renderNodes();}catch(e){}
-  }
+  try{
+    function diff(a,b){return JSON.stringify(a)!==JSON.stringify(b);}
+    var changed=false;
+    if(data.pins&&diff(data.pins,S.pins)){S.pins=data.pins;changed=true;}
+    if(data.nodes&&diff(data.nodes,S.nodes)){S.nodes=data.nodes;changed=true;}
+    if(data.connections&&diff(data.connections,S.connections)){S.connections=data.connections;changed=true;}
+    if(data.sessions&&diff(data.sessions,S.sessions)){S.sessions=data.sessions;changed=true;}
+    if(data.products&&diff(data.products,S.products)){S.products=data.products;changed=true;}
+    if(data.versions&&diff(data.versions,S.versions)){S.versions=data.versions;changed=true;}
+    /* Images (localStorage only) */
+    if(data.bgImage&&data.bgImage!==S.bgImage){S.bgImage=data.bgImage;renderBgImage();}
+    if(data.annImages&&diff(data.annImages,S.annImages)){
+      S.annImages=data.annImages;
+      /* Clear existing a-img elements and re-render */
+      var annots=document.getElementById('annots');
+      if(annots){Array.from(annots.querySelectorAll('.a-img')).forEach(function(el){el.remove();});}
+      renderAnnImages();
+    }
+    if(changed){
+      S.nextNum=S.pins.reduce(function(m,p){return Math.max(m,p.num);},0)+1;
+      renderPins();renderFeedback();renderRoadmap();renderTimeline();renderProductDrop();updateStats();
+      try{renderConns();renderNodes();}catch(e){}
+    }
+  }catch(e){console.warn('applyRemote error:',e);}
   _applyingRemote=false;
 }
+
+/* Poll Firebase every 5s for other users changes */
 function startFirebaseSync(){
-  setSyncPill('ok','● Live');
+  setSyncPill('ok','● live');
   setInterval(function(){
     if(Date.now()<_syncIgnore)return;
-    fetch(FB_URL).then(function(r){return r.json();}).then(function(d){applyRemote(d);setSyncPill('ok','● Live');}).catch(function(){setSyncPill('err','✗ Offline');});
-  },4000);
+    fetch(FB_URL)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d&&d.pins){
+          /* merge Firebase pins with local images */
+          if(S.bgImage)d.bgImage=S.bgImage;
+          if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
+          applyRemote(d);
+          setSyncPill('ok','● live');
+        }
+      })
+      .catch(function(){setSyncPill('err','✗ offline');});
+  },5000);
 }
 
 /* ── INIT ── */
@@ -831,20 +932,56 @@ function init(){
   setTool('sel');
   setupEvents();
   setTimeout(fitScreen,50);
-  // Load from Firebase; fall back to seed data if empty
-  fetch(FB_URL).then(function(r){return r.json();}).then(function(data){
-    if(data&&data.pins&&data.pins.length){
-      applyRemote(data);
-    } else {
-      loadPins();
-      scheduleSync();
-    }
-    renderProductDrop();renderTimeline();
-    startFirebaseSync();
-  }).catch(function(){
-    loadPins();renderProductDrop();renderTimeline();
-    startFirebaseSync();
-  });
+  setSyncPill('','loading…');
+
+  /* Load order: Firebase (latest pins from everyone) + localStorage (images) */
+  var localData=loadLocal();
+
+  fetch(FB_URL)
+    .then(function(r){return r.json();})
+    .then(function(fbData){
+      var hasFB=fbData&&fbData.pins&&fbData.pins.length>0;
+      var hasLocal=localData&&localData.pins&&localData.pins.length>0;
+
+      if(hasFB){
+        /* Use Firebase pins (most authoritative) */
+        applyRemote(fbData);
+        /* Also restore images from localStorage */
+        if(localData){
+          if(localData.bgImage&&!S.bgImage){S.bgImage=localData.bgImage;renderBgImage();}
+          if(localData.annImages&&localData.annImages.length&&!S.annImages.length){S.annImages=localData.annImages;renderAnnImages();}
+        }
+        saveLocal();
+        setSyncPill('ok','● live');
+      } else if(hasLocal){
+        /* Firebase empty, use local data */
+        applyRemote(localData);
+        renderBgImage();
+        renderAnnImages();
+        scheduleSync();
+        setSyncPill('ok','● live');
+      } else {
+        /* Fresh start - load seed data */
+        loadPins();
+        scheduleSync();
+        setSyncPill('ok','● live');
+      }
+      renderProductDrop();renderTimeline();
+      startFirebaseSync();
+    })
+    .catch(function(){
+      /* Firebase unreachable */
+      setSyncPill('err','✗ offline (local only)');
+      if(localData&&localData.pins&&localData.pins.length>0){
+        applyRemote(localData);
+        renderBgImage();
+        renderAnnImages();
+      } else {
+        loadPins();
+      }
+      renderProductDrop();renderTimeline();
+      startFirebaseSync();
+    });
 }
 
 /* ── USER CHIP ── */
@@ -1482,34 +1619,28 @@ function confirmImgOwn(){
 }
 function placeShot(url,own,pt){
   if(!url)return;
-  const el=mk('div','a-img');
-  el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;width:300px;height:188px;background:url(\''+url+'\') center/cover;border-radius:6px;border:2px solid '+(own==='me'?S.user.color:'#aaa')+';cursor:move;z-index:10;';
-  el.dataset.own=own;
-  annTag(el);annClick(el);makeDraggable(el);
-  // Lock button
-  const lbtn=mk('div','');
-  lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
-  lbtn.textContent='🔓';lbtn.title='Lock element';
-  lbtn.addEventListener('click',e=>{
-    e.stopPropagation();
-    const locked=el.dataset.locked==='true';
-    if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
-    el.dataset.locked=locked?'false':'true';
-    lbtn.textContent=locked?'🔓':'🔒';
-    el.style.cursor=locked?'move':'default';
-    el.style.opacity=locked?'1':'0.85';
-  });
-  el.appendChild(lbtn);
-  $('annots').appendChild(el);
+  var imgData={id:'img'+Date.now(),url:url,own:own||'me',x:pt.x,y:pt.y};
+  S.annImages=S.annImages||[];
+  S.annImages.push(imgData);
+  _placeImageEl(imgData);
+  saveLocal();
 }
 function loadCanvasImage(input){
   const file=input.files[0];if(!file)return;
   const r=new FileReader();
   r.onload=ev=>{
+    const url=ev.target.result;
     const mi=$('main-img');
     if(mi&&mi.style.backgroundImage&&mi.style.backgroundImage!==''&&mi.style.backgroundImage!=='none'){
-      S.pendingImgUrl=ev.target.result;S.pastedPt=null;openModal('img-own-modal');
-    }else{mi.style.backgroundImage=`url('${ev.target.result}')`;mi.style.backgroundSize='cover';mi.style.backgroundPosition='center';const ph=$('img-ph');if(ph)ph.style.display='none';}
+      S.pendingImgUrl=url;S.pastedPt=null;openModal('img-own-modal');
+    }else{
+      mi.style.backgroundImage="url("+JSON.stringify(url)+")";
+      mi.style.backgroundSize='cover';
+      mi.style.backgroundPosition='center';
+      const ph=$('img-ph');if(ph)ph.style.display='none';
+      S.bgImage=url;
+      saveLocal();
+    }
   };r.readAsDataURL(file);
 }
 
