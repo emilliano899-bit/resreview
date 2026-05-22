@@ -2230,7 +2230,7 @@ function renderFeedback(){
       const eli=mk('input','mi');eli.value=p.link||'';eli.placeholder='Reference link…';eli.style.cssText='width:100%;margin-bottom:6px;font-size:11px;';
       body.appendChild(eli);
       const acts=mk('div','');acts.style.cssText='display:flex;gap:5px;';
-      const save=mk('button','mbtn pri','Save');save.onclick=e=>{e.stopPropagation();p.title=(eti.value||'').trim()||p.title;p.txt=(eta.value||'').trim();p.tags=[...editTags];p.link=(eli.value||'').trim();S.editingPinId=null;renderFeedback();renderRoadmap();};
+      const save=mk('button','mbtn pri','Save');save.onclick=e=>{e.stopPropagation();p.title=(eti.value||'').trim()||p.title;p.txt=(eta.value||'').trim();p.tags=[...editTags];p.link=(eli.value||'').trim();S.editingPinId=null;renderFeedback();renderRoadmap();scheduleSync();};
       const cancel=mk('button','mbtn','Cancel');cancel.onclick=e=>{e.stopPropagation();S.editingPinId=null;renderFeedback();};
       acts.appendChild(save);acts.appendChild(cancel);body.appendChild(acts);
     }else{
@@ -2241,7 +2241,7 @@ function renderFeedback(){
       const foot=mk('div','fc-foot');
       const vb=mk('button','upbtn'+(p.voted?' voted':''),'▲ '+p.votes);
       if(p.voted){vb.style.background=p.color;vb.style.borderColor=p.color;}
-      vb.onclick=e=>{e.stopPropagation();p.voted=!p.voted;p.votes+=p.voted?1:-1;renderFeedback();renderRoadmap();updateStats();};
+      vb.onclick=e=>{e.stopPropagation();p.voted=!p.voted;p.votes+=p.voted?1:-1;renderFeedback();renderRoadmap();updateStats();scheduleSync();};
       foot.appendChild(vb);
       if(S.isAdmin){
         const rsel=mk('select','asel');
@@ -2253,7 +2253,7 @@ function renderFeedback(){
           e.stopPropagation();
           if(rsel.value==='__none__'){p.roadmap=false;p.rmap_cat='planned';}
           else{p.roadmap=true;p.rmap_cat=rsel.value;}
-          applyRselStyle();renderRoadmap();renderFeedback();
+          applyRselStyle();renderRoadmap();renderFeedback();scheduleSync();
           toast(p.roadmap?'Added to '+RMAP_CATS.find(c=>c.id===p.rmap_cat)?.label:'Removed from roadmap');
         };
         rsel.onclick=e=>e.stopPropagation();
@@ -2272,7 +2272,7 @@ function renderFeedback(){
       const rw=mk('div','reply-input-wrap');
       const rin=mk('textarea','reply-in');rin.placeholder='Reply…';rin.rows=1;rin.oninput=()=>autosize(rin);
       const rsub=mk('button','reply-send','Send');rsub.style.background=p.color;
-      rsub.onclick=()=>{const txt=(rin.value||'').trim();if(!txt)return;p.replies.push({id:'r'+Date.now(),auth:S.user.name,av:S.user.av,color:S.user.color,txt,time:new Date().toISOString().slice(0,10)});rin.value='';renderFeedback();renderRoadmap();};
+      rsub.onclick=()=>{const txt=(rin.value||'').trim();if(!txt)return;p.replies.push({id:'r'+Date.now(),auth:S.user.name,av:S.user.av,color:S.user.color,txt,time:new Date().toISOString().slice(0,10)});rin.value='';renderFeedback();renderRoadmap();scheduleSync();};
       rw.appendChild(rin);rw.appendChild(rsub);card.appendChild(rw);
     }
     if(!isEditing)card.addEventListener('click',()=>activatePin(p.id));
@@ -2289,7 +2289,7 @@ function openRtmModal(pid){
 function closeRtmModal(){closeModal('rtm-modal');}
 function confirmRtm(){
   const p=S.pins.find(x=>x.id===S.rtmPinId);if(!p){closeRtmModal();return;}
-  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');
+  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');scheduleSync();
 }
 function showView(view){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('on',t.id==='nav-'+view));
@@ -2483,7 +2483,4 @@ function renderTimeline(){
     it.appendChild(dot);it.appendChild(lbl);it.appendChild(nm);
     if(S.isAdmin){const rb=mk('span','',` ✎`);rb.style.cssText='font-size:9px;color:var(--muted2);cursor:pointer;';rb.onclick=e=>{e.stopPropagation();openRename('version',v.id);};nm.appendChild(rb);}
     it.onclick=()=>pickVer(v.id);
-    tl.appendChild(it);
-  });
-  if(S.isAdmin){
-    const add=mk('div','tadd','<span>+</span> Add
+    tl.appendChild(it
