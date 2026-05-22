@@ -163,7 +163,8 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .pin-wrap{position:absolute;}
 .pin{position:absolute;width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.22);transition:transform .18s,box-shadow .18s;}
 .pin:hover{transform:rotate(-45deg) scale(1.18);}
-.pin.active{transform:rotate(-45deg) scale(1.25);box-shadow:0 0 0 3px rgba(0,0,0,.1),0 4px 14px rgba(0,0,0,.28);}
+@keyframes pinPop{0%{transform:rotate(-45deg) scale(1);}55%{transform:rotate(-45deg) scale(1.38);}100%{transform:rotate(-45deg) scale(1.25);}}
+.pin.active{transform:rotate(-45deg) scale(1.25);box-shadow:0 0 0 3px rgba(0,0,0,.1),0 4px 14px rgba(0,0,0,.28);animation:pinPop .28s cubic-bezier(.34,1.56,.64,1);}
 .pin.sess-pin{border-radius:5px;}
 .pnum{transform:rotate(45deg);font-size:9px;font-weight:800;color:#fff;}
 .pin-label{position:absolute;left:28px;top:-3px;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2px 8px 2px 4px;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.08);max-width:200px;}
@@ -1885,11 +1886,13 @@ function confirmPin(){
   const title=($('draft-title')?.value||'').trim();if(!title){toast('Add a title');return;}
   if(!S.pendingPin){toast('Click the canvas first');return;}
   const ci=COLORS.indexOf(S.user.color);
-  S.pins.push(mkPin('p'+Date.now(),S.nextNum++,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
+  const newPinId='p'+Date.now();
+  S.pins.push(mkPin(newPinId,S.nextNum++,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
     S.user.name,S.user.av,S.user.id,S.activeSessionId,title,
     ($('draft-body')?.value||'').trim(),dc(S.pendingTags),0,
     new Date().toISOString().slice(0,10),false,'planned',($('draft-link')?.value||'').trim()));
   S.pendingPin=null;S.pendingTags=[];renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
+  activatePin(newPinId); /* scroll sidebar to new pin + zoom it on canvas */
 }
 function buildTagPicker(){
   const c=$('tag-pick-wrap');if(!c)return;c.innerHTML='';
