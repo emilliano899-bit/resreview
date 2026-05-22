@@ -767,10 +767,14 @@ function scheduleSync(){
 }
 function pushToFirebase(){
   _syncIgnore=Date.now()+3000;
-  fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
-      sessions:S.sessions,products:S.products,versions:S.versions})
-  }).catch(function(){});
+  var payload=JSON.stringify({pins:S.pins,nodes:S.nodes,connections:S.connections,
+    sessions:S.sessions,products:S.products,versions:S.versions});
+  fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
+  .then(function(r){
+    if(!r.ok){r.text().then(function(t){console.error('Firebase write failed:',r.status,t);toast('⚠ Sync error: '+r.status);});}
+    else{console.log('Firebase sync OK, pins:',S.pins.length);}
+  })
+  .catch(function(e){console.error('Firebase fetch error:',e);toast('⚠ Sync error — check console');});
 }
 function applyRemote(data){
   if(!data)return;
