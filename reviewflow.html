@@ -915,12 +915,12 @@ function startFirebaseSync(){
     fetch(FB_URL)
       .then(function(r){return r.json();})
       .then(function(d){
+        /* Re-check ignore flag — fetch may have resolved after a local change set it */
+        if(Date.now()<_syncIgnore)return;
         if(d&&d.pins){
-          /* Only apply if Firebase has MORE pins than local (someone else added data)
-             or if local count matches (safe to sync positions/edits).
-             Never apply if Firebase has FEWER pins — that means local has unsaved additions. */
+          /* Only apply if Firebase has same or more pins than local.
+             If local has more, we have unsaved additions — don't overwrite. */
           if(d.pins.length>=S.pins.length){
-            /* preserve local images when applying remote pin data */
             if(S.bgImage)d.bgImage=S.bgImage;
             if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
             applyRemote(d);
@@ -1891,8 +1891,17 @@ function confirmPin(){
     S.user.name,S.user.av,S.user.id,S.activeSessionId,title,
     ($('draft-body')?.value||'').trim(),dc(S.pendingTags),0,
     new Date().toISOString().slice(0,10),false,'planned',($('draft-link')?.value||'').trim()));
-  S.pendingPin=null;S.pendingTags=[];renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
-  activatePin(newPinId); /* scroll sidebar to new pin + zoom it on canvas */
+  S.pendingPin=null;S.pendingTags=[];
+  S.sortMode='newest'; /* new pin appears first in sidebar */
+  renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
+  /* scroll sidebar to the new pin card */
+  setTimeout(function(){
+    var card=document.querySelector('.fcard[data-id="'+newPinId+'"]');
+    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
+    var list=document.getElementById('flist');
+    if(list)list.scrollTop=0;
+  },50);
+  activatePin(newPinId);
 }
 function buildTagPicker(){
   const c=$('tag-pick-wrap');if(!c)return;c.innerHTML='';
