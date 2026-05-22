@@ -496,10 +496,9 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="fphead">
     <div class="fptit">Comments</div>
     <div class="fpcnt" id="fpcnt">0</div>
-    <select class="fpsort" onchange="sortBy(this.value)">
+    <select class="fpsort" id="sort-sel" onchange="sortBy(this.value)">
       <option value="votes">Top</option>
       <option value="newest">New</option>
-      <option value="status">Status</option>
     </select>
   </div>
   <div class="ftags" id="tag-filters"></div>
@@ -1980,11 +1979,23 @@ function updateStats(){
 }
 
 /* ── FEEDBACK PANEL ── */
-function sortBy(mode){S.sortMode=mode;renderFeedback();}
+function sortBy(mode){
+  S.sortMode=mode;
+  var sel=document.getElementById('sort-sel');
+  if(sel)sel.value=mode;
+  renderFeedback();
+}
 function sortedPins(){
   let ps=[...S.pins];
   if(S.activeTag)ps=ps.filter(p=>p.tags.includes(S.activeTag));
-  return ps.sort((a,b)=>S.sortMode==='newest'?b.time.localeCompare(a.time):b.votes-a.votes);
+  return ps.sort(function(a,b){
+    if(S.sortMode==='newest'){
+      return (b.time||'').localeCompare(a.time||'');
+    }
+    /* Top: sort by votes desc, then by time desc as tiebreaker */
+    var vd=b.votes-a.votes;
+    return vd!==0?vd:(b.time||'').localeCompare(a.time||'');
+  });
 }
 function renderTagFilters(){
   const c=$('tag-filters');if(!c)return;c.innerHTML='';
