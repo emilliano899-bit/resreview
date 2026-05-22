@@ -2137,7 +2137,7 @@ function renderFeedback(){
       const foot=mk('div','fc-foot');
       const vb=mk('button','upbtn'+(p.voted?' voted':''),'▲ '+p.votes);
       if(p.voted){vb.style.background=p.color;vb.style.borderColor=p.color;}
-      vb.onclick=e=>{e.stopPropagation();p.voted=!p.voted;p.votes+=p.voted?1:-1;renderFeedback();renderRoadmap();updateStats();scheduleSync();};
+      vb.onclick=e=>{e.stopPropagation();p.voted=!p.voted;p.votes+=p.voted?1:-1;renderFeedback();renderRoadmap();updateStats();};
       foot.appendChild(vb);
       if(S.isAdmin){
         const rsel=mk('select','asel');
@@ -2185,7 +2185,7 @@ function openRtmModal(pid){
 function closeRtmModal(){closeModal('rtm-modal');}
 function confirmRtm(){
   const p=S.pins.find(x=>x.id===S.rtmPinId);if(!p){closeRtmModal();return;}
-  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');scheduleSync();
+  p.roadmap=true;p.rmap_cat=S.selRmapCat;closeRtmModal();renderRoadmap();renderFeedback();toast('Added to roadmap');
 }
 function showView(view){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('on',t.id==='nav-'+view));
@@ -2356,4 +2356,7 @@ function renderTimeline(){
   }
 }
 
-document.addEventListener("DOMContentLoaded",in
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
