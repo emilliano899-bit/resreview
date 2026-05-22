@@ -812,6 +812,7 @@ function pushToFirebase(){
     });}
     else{
       console.log('Firebase OK, pins:',S.pins.length);
+      _syncIgnore=Date.now()+3000; /* hold off poll briefly so stale response can't race the fresh write */
       setSyncPill('ok','✓ saved');
       setTimeout(function(){setSyncPill('ok','● live');},2500);
     }
@@ -944,13 +945,11 @@ function startFirebaseSync(){
         /* Re-check ignore flag — fetch may have resolved after a local change set it */
         if(Date.now()<_syncIgnore)return;
         if(d&&d.pins){
-          /* Only apply if Firebase has same or more pins than local.
-             If local has more, we have unsaved additions — don't overwrite. */
-          if(d.pins.length>=S.pins.length){
-            if(S.bgImage)d.bgImage=S.bgImage;
-            if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
-            applyRemote(d);
-          }
+          /* _syncIgnore already blocks this window after any local change.
+             Apply remote unconditionally so deletes/edits from Firebase sync correctly. */
+          if(S.bgImage)d.bgImage=S.bgImage;
+          if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
+          applyRemote(d);
           setSyncPill('ok','● live');
         }
       })
@@ -2483,5 +2482,3 @@ function renderTimeline(){
   }
 }
 
-document.addEventListener("DOMContentLoaded",init);
-</script>
