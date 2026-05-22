@@ -405,6 +405,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="vsep"></div>
   <button class="hbtn" id="admin-btn" onclick="toggleAdmin()">Admin</button>
   <span class="admin-pill" id="admin-pill" style="display:none">ADMIN</span>
+  <span class="sync-pill" id="sync-pill" title="Firebase sync status">⟳ Connecting…</span>
 </header>
 
 <!-- MAIN -->
@@ -758,9 +759,68 @@ function cvPt(e){const r=$('cwrap').getBoundingClientRect();return{x:(e.clientX-
 function wc(){const w=$('cwrap');return{x:w.offsetWidth/2,y:w.offsetHeight/2};}
 function fmtMentions(t){return(t||'').replace(/@(\w+)/g,'<span class="r-txt" style="color:var(--sel);font-weight:600">@$1</span>');}
 
-/* ── NO PERSISTENCE (demo mode) ── */
-function scheduleSync(){/* no-op */}
-function setSyncPill(){/* no-op */}
+/* ── PERSISTENCE: localStorage + Firebase ── */
+const FB_URL='https://resreview-1d13f-default-rtdb.firebaseio.com/state.json';
+const LS_KEY='resreview_v3';
+let _syncTimer=null,_syncIgnore=0,_applyingRemote=false;
+
+/* Payload for Firebase (no images - too large) */
+function getFBPayload(){
+  return {pins:S.pins,nodes:S.nodes,connections:S.connections,
+    sessions:S.sessions,products:S.products,versions:S.versions};
+}
+/* Full payload for localStorage (includes images) */
+function getLSPayload(){
+  return Object.assign(getFBPayload(),{bgImage:S.bgImage,annImages:S.annImages,shapes:S.shapes});
+}
+
+/* localStorage helpers */
+function saveLocal(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(getLSPayload()));}catch(e){console.warn('localStorage save failed:',e);}
+}
+function loadLocal(){
+  try{var d=localStorage.getItem(LS_KEY);return d?JSON.parse(d):null;}catch(e){return null;}
+}
+
+/* Sync pill UI */
+function setSyncPill(state,msg){
+  var p=document.getElementById('sync-pill');if(!p)return;
+  p.textContent=msg;
+  if(state==='ok'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #4ade80;color:#166534;background:#dcfce7;letter-spacing:.03em;transition:all .3s;';}
+  else if(state==='err'){p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid #f87171;color:#991b1b;background:#fee2e2;letter-spacing:.03em;transition:all .3s;';}
+  else{p.style.cssText='font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;border:1px solid var(--border);color:var(--muted);background:var(--hover);letter-spacing:.03em;transition:all .3s;';}
+}
+
+/* scheduleSync: save locally immediately, push to Firebase soon after */
+function scheduleSync(){
+  if(_applyingRemote)return;
+  saveLocal();
+  _syncIgnore=Date.now()+8000; /* block poll immediately so it can't overwrite local changes */
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(pushToFirebase,1000);
+}
+
+function pushToFirebase(){
+  _syncIgnore=Date.now()+5000;
+  setSyncPill('','saving…');
+  var payload=JSON.stringify(getFBPayload());
+  fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload})
+  .then(function(r){
+    if(!r.ok){r.text().then(function(t){
+      console.error('Firebase PUT failed:',r.status,t);
+      setSyncPill('err','✗ err '+r.status);
+    });}
+    else{
+      console.log('Firebase OK, pins:',S.pins.length);
+      setSyncPill('ok','✓ saved');
+      setTimeout(function(){setSyncPill('ok','● live');},2500);
+    }
+  })
+  .catch(function(e){
+    console.error('Firebase error:',e);
+    setSyncPill('err','✗ offline');
+  });
+}
 
 /* Restore the main canvas background image */
 function renderBgImage(){
@@ -796,6 +856,7 @@ function _placeImageEl(img){
   annTag(el);annClick(el);
   makeDraggable(el,function(){
     img.x=parseFloat(el.style.left);img.y=parseFloat(el.style.top);
+    saveLocal();
   });
   var lbtn=mk('div','');
   lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
@@ -872,7 +933,30 @@ function applyRemote(data){
   _applyingRemote=false;
 }
 
-function startFirebaseSync(){/* no-op in demo mode */}
+/* Poll Firebase every 5s for other users changes */
+function startFirebaseSync(){
+  setSyncPill('ok','● live');
+  setInterval(function(){
+    if(Date.now()<_syncIgnore)return;
+    fetch(FB_URL)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        /* Re-check ignore flag — fetch may have resolved after a local change set it */
+        if(Date.now()<_syncIgnore)return;
+        if(d&&d.pins){
+          /* Only apply if Firebase has same or more pins than local.
+             If local has more, we have unsaved additions — don't overwrite. */
+          if(d.pins.length>=S.pins.length){
+            if(S.bgImage)d.bgImage=S.bgImage;
+            if(S.annImages&&S.annImages.length)d.annImages=S.annImages;
+            applyRemote(d);
+          }
+          setSyncPill('ok','● live');
+        }
+      })
+      .catch(function(){setSyncPill('err','✗ offline');});
+  },5000);
+}
 
 /* ── SHAPE PERSISTENCE ── */
 function captureShape(el){
@@ -891,6 +975,7 @@ function captureShape(el){
       sessId:el.dataset.sessId||'',userId:el.dataset.userId||''};
   }
   S.shapes.push(data);
+  saveLocal();
 }
 function updateShapePos(el){
   if(!el.dataset.shapeId||!S.shapes)return;
@@ -898,6 +983,7 @@ function updateShapePos(el){
   if(!sh)return;
   if(sh.isSvg){Array.from(el.attributes).forEach(function(a){sh.attrs[a.name]=a.value;});}
   else{sh.css=el.style.cssText;if(sh.type==='label')sh.html=el.innerHTML;}
+  saveLocal();
 }
 function restoreShapes(){
   if(!S.shapes||!S.shapes.length)return;
@@ -952,9 +1038,58 @@ function init(){
   setTool('sel');
   setupEvents();
   setTimeout(fitScreen,50);
-  loadPins();
-  renderProductDrop();
-  renderTimeline();
+  setSyncPill('','loading…');
+
+  /* Load order: Firebase (latest pins from everyone) + localStorage (images) */
+  var localData=loadLocal();
+
+  fetch(FB_URL)
+    .then(function(r){return r.json();})
+    .then(function(fbData){
+      var hasFB=fbData&&fbData.pins&&fbData.pins.length>0;
+      var hasLocal=localData&&localData.pins&&localData.pins.length>0;
+
+      if(hasFB){
+        /* Use Firebase pins (most authoritative) */
+        applyRemote(fbData);
+        if(localData){
+          if(localData.bgImage&&!S.bgImage){S.bgImage=localData.bgImage;renderBgImage();}
+          if(localData.annImages&&localData.annImages.length&&!S.annImages.length){S.annImages=localData.annImages;renderAnnImages();}
+          if(localData.shapes&&localData.shapes.length&&!S.shapes.length){S.shapes=localData.shapes;restoreShapes();}
+        }
+        saveLocal();
+        setSyncPill('ok','● live');
+      } else if(hasLocal){
+        /* Firebase empty, use local data */
+        applyRemote(localData);
+        renderBgImage();
+        renderAnnImages();
+        restoreShapes();
+        scheduleSync();
+        setSyncPill('ok','● live');
+      } else {
+        /* Fresh start - load seed data */
+        loadPins();
+        scheduleSync();
+        setSyncPill('ok','● live');
+      }
+      renderProductDrop();renderTimeline();
+      startFirebaseSync();
+    })
+    .catch(function(){
+      /* Firebase unreachable */
+      setSyncPill('err','✗ offline (local only)');
+      if(localData&&localData.pins&&localData.pins.length>0){
+        applyRemote(localData);
+        renderBgImage();
+        renderAnnImages();
+        restoreShapes();
+      } else {
+        loadPins();
+      }
+      renderProductDrop();renderTimeline();
+      startFirebaseSync();
+    });
 }
 
 /* ── USER CHIP ── */
@@ -1596,6 +1731,7 @@ function placeShot(url,own,pt){
   S.annImages=S.annImages||[];
   S.annImages.push(imgData);
   _placeImageEl(imgData);
+  saveLocal();
 }
 function loadCanvasImage(input){
   const file=input.files[0];if(!file)return;
@@ -1611,6 +1747,7 @@ function loadCanvasImage(input){
       mi.style.backgroundPosition='center';
       const ph=$('img-ph');if(ph)ph.style.display='none';
       S.bgImage=url;
+      saveLocal();
     }
   };r.readAsDataURL(file);
 }
