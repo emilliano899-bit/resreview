@@ -76,6 +76,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pd-ver-ren{font-size:9px;color:var(--muted2);cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid transparent;visibility:hidden;}
 .pd-ver:hover .pd-ver-ren{visibility:visible;}
 .pd-ver-ren:hover{color:var(--text);border-color:var(--border2);}
+.pd-ver-del{font-size:9px;color:var(--muted2);cursor:pointer;padding:1px 5px;border-radius:3px;border:1px solid transparent;visibility:hidden;}
+.pd-ver:hover .pd-ver-del{visibility:visible;}
+.pd-ver-del:hover{color:#ef4444;border-color:#fca5a5;}
 .pd-divider{height:1px;background:var(--border);margin:4px 0;}
 /* Stats chips */
 .hchip{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);padding:3px 8px;border-radius:5px;border:1px solid var(--border);}
@@ -285,14 +288,16 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .mention-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff;}
 
 /* ── Roadmap ── */
-.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;overflow:auto;cursor:default;}
+.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;cursor:default;flex-direction:column;}
 .rmap.rmap-panning{cursor:grabbing;}
-.rmap.open{display:block;}
-.rmap-inner{padding:28px;min-width:max-content;}
-.rmap-h{font-size:18px;font-weight:700;margin-bottom:3px;}
-.rmap-s{font-size:12px;color:var(--muted);margin-bottom:22px;}
+.rmap.open{display:flex;}
+.rmap-toolbar{flex-shrink:0;padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:var(--surface);z-index:10;}
+.rmap-inner{flex:1;overflow:auto;padding:20px 28px;min-width:0;}
+.rmap-inner-w{min-width:max-content;}
+.rmap-h{font-size:18px;font-weight:700;}
+.rmap-s{font-size:12px;color:var(--muted);}
 .rmap-cols{display:flex;flex-direction:row;gap:12px;min-width:max-content;}
-.rmap-col{border:1px solid var(--border);border-radius:10px;overflow:visible;min-width:380px;width:450px;flex-shrink:0;}
+.rmap-col{border:1px solid var(--border);border-radius:10px;overflow:visible;min-width:342px;width:405px;flex-shrink:0;}
 .rmap-col-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;border-radius:10px 10px 0 0;}
 .rmap-col-hdr-dot{width:8px;height:8px;border-radius:50%;}
 .rmap-ct{font-size:12px;font-weight:700;flex:1;}
@@ -465,6 +470,18 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div id="spick-del" style="display:none;padding-top:4px;border-top:1px solid var(--border);">
     <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🗑 Delete</button>
   </div>
+  <div id="spick-img" style="display:none;flex-direction:column;gap:8px;">
+    <div id="spick-img-sess" style="font-size:10px;color:var(--muted);font-weight:600;"></div>
+    <div class="splbl" style="margin-bottom:0;">Ownership</div>
+    <div style="display:flex;gap:5px;">
+      <button id="spick-img-own-gen" onclick="imgSetOwn('general')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;">🌐 General</button>
+      <button id="spick-img-own-sess" onclick="imgSetOwn('me')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;">📌 Session</button>
+    </div>
+    <button id="spick-img-lock" onclick="imgToggleLock()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--hover);color:var(--text);cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🔓 Unlocked</button>
+    <div style="border-top:1px solid var(--border);padding-top:4px;">
+      <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🗑 Delete</button>
+    </div>
+  </div>
 </div>
 
 <!-- CANVAS AREA -->
@@ -502,15 +519,17 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="ctx-menu" id="ctx-menu"></div>
   <!-- Roadmap overlay (within canvas area) -->
   <div class="rmap" id="rmap">
-    <div class="rmap-inner">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-        <div><div class="rmap-h">Roadmap</div><div class="rmap-s" id="rmap-sub">Community feedback</div></div>
-        <div style="margin-left:auto;display:flex;gap:8px;">
-          <button onclick="importUnresolved()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;">⬇ Import unresolved</button>
-          <button onclick="addRmapCol()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--hover);color:var(--text);border:1px solid var(--border);font-weight:600;">+ Add category</button>
-        </div>
+    <div class="rmap-toolbar">
+      <div><div class="rmap-h">Roadmap</div><div class="rmap-s" id="rmap-sub">Community feedback</div></div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <button onclick="importUnresolved()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;">⬇ Import unresolved</button>
+        <button onclick="addRmapCol()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--hover);color:var(--text);border:1px solid var(--border);font-weight:600;">+ Add category</button>
       </div>
-      <div class="rmap-body" id="rmap-body"><div class="rmap-cols" id="rmap-cols"></div></div>
+    </div>
+    <div class="rmap-inner">
+      <div class="rmap-inner-w">
+        <div class="rmap-body" id="rmap-body"><div class="rmap-cols" id="rmap-cols"></div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -847,17 +866,20 @@ function startFirebaseSync(){}
 /* ── INIT ── */
 function initRmapPan(){
   var rm=$('rmap');if(!rm)return;
+  var inner=rm.querySelector('.rmap-inner');
   var _down=false,_sx=0,_sy=0,_sl=0,_st=0;
   rm.addEventListener('mousedown',function(e){
-    if(e.target.closest('.rmap-item,.rmap-col-hdr,.rmap-resolve-btn,.rmap-reply-toggle,.rmap-assign-btn,button,input,textarea,a'))return;
+    if(e.target.closest('.rmap-toolbar,.rmap-item,.rmap-col-hdr,.rmap-resolve-btn,.rmap-reply-toggle,.rmap-assign-btn,button,input,textarea,a'))return;
     if(e.button!==0)return;
-    _down=true;_sx=e.clientX;_sy=e.clientY;_sl=rm.scrollLeft;_st=rm.scrollTop;
+    var sc=inner||rm;
+    _down=true;_sx=e.clientX;_sy=e.clientY;_sl=sc.scrollLeft;_st=sc.scrollTop;
     rm.classList.add('rmap-panning');e.preventDefault();
   });
   document.addEventListener('mousemove',function(e){
     if(!_down)return;
-    rm.scrollLeft=_sl-(_sx-e.clientX)*1.1;
-    rm.scrollTop=_st-(_sy-e.clientY)*1.1;
+    var sc=inner||rm;
+    sc.scrollLeft=_sl-(_sx-e.clientX)*1.1;
+    sc.scrollTop=_st-(_sy-e.clientY)*1.1;
   });
   document.addEventListener('mouseup',function(){
     if(_down){_down=false;rm.classList.remove('rmap-panning');}
@@ -942,7 +964,10 @@ function renderProductDrop(){
       const lbl=mk('span','pd-ver-lbl',v.lbl);
       const nm=mk('span','pd-ver-name',v.name);
       vr.appendChild(dot);vr.appendChild(lbl);vr.appendChild(nm);
-      if(S.isAdmin){const ren=mk('span','pd-ver-ren','✎');ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('version',v.id);};vr.appendChild(ren);}
+      if(S.isAdmin){
+        const ren=mk('span','pd-ver-ren','✎');ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('version',v.id);};vr.appendChild(ren);
+        const vdel=mk('span','pd-ver-del','✕');vdel.title='Delete version';vdel.onclick=e=>{e.stopPropagation();const pvs=prodVers(p.id);if(pvs.length<=1){toast('Cannot delete the last version');return;}if(!confirm('Delete version "'+v.lbl+' – '+v.name+'"?'))return;S.versions=S.versions.filter(x=>x.id!==v.id);if(S.curVer===v.id){const rem=prodVers(p.id);S.curVer=rem[0]?.id||'';}closeProdDrop();renderProductDrop();renderTimeline();};vr.appendChild(vdel);
+      }
       vr.onclick=e=>{e.stopPropagation();switchProduct(p.id);pickVer(v.id);};
       vers.appendChild(vr);
     });
@@ -1245,14 +1270,33 @@ function makeDraggable(el,onmove){
 /* ── SELECTION ── */
 function selEl(el){
   clearSel();S.selEl=el;el.classList.add('ann-sel');
-  const resizable=el.classList.contains('a-img')||el.classList.contains('a-rect')||el.classList.contains('a-ellipse');
+  const isImg=el.classList.contains('a-img');
+  const resizable=isImg||el.classList.contains('a-rect')||el.classList.contains('a-ellipse');
   const isSvgEl=el.tagName==='line'||el.tagName==='path'||el.tagName==='rect'||el.tagName==='ellipse';
   if(resizable)addRH(el);else if(isSvgEl)addSvgHandles(el);
   const sp=$('spick');if(!sp)return;
-  const showStylePanel=resizable||isSvgEl;
-  // Show thickness/style controls only for drawable elements; always show delete for owner
-  sp.querySelectorAll('.splbl,.sp-sizes,.sp-styles').forEach(function(x){x.style.display=showStylePanel?'':  'none';});
-  const _sdel=$('spick-del');if(_sdel)_sdel.style.display=canEdit(el)?'block':'none';
+  const showStylePanel=(resizable||isSvgEl)&&!isImg;
+  sp.querySelectorAll('.splbl,.sp-sizes,.sp-styles').forEach(function(x){x.style.display=showStylePanel?'':'none';});
+  const _sdel=$('spick-del');if(_sdel)_sdel.style.display=(canEdit(el)&&!isImg)?'block':'none';
+  // Image panel
+  const imgPanel=$('spick-img');
+  if(imgPanel){
+    if(isImg){
+      imgPanel.style.display='flex';
+      const sessEl=$('spick-img-sess');
+      if(sessEl){const sess=S.sessions.find(function(s){return s.id===el.dataset.sessId;});sessEl.textContent=sess?'Session '+sess.num+': '+sess.name:'';sessEl.style.display=el.dataset.sessId?'block':'none';}
+      const lbtn=$('spick-img-lock');
+      if(lbtn){const locked=el.dataset.locked==='true';lbtn.textContent=locked?'🔒 Locked':'🔓 Unlocked';lbtn.style.background=locked?'#fff7ed':'var(--hover)';lbtn.style.borderColor=locked?'#fdba74':'var(--border)';}
+      const own=el.dataset.own||'me';
+      const gb=$('spick-img-own-gen'),sb=$('spick-img-own-sess');
+      if(gb&&sb){
+        gb.style.background=own==='general'?'#f0fdf4':'var(--hover)';gb.style.borderColor=own==='general'?'#86efac':'var(--border)';gb.style.color=own==='general'?'#16a34a':'var(--text)';
+        sb.style.background=own!=='general'?'#eff6ff':'var(--hover)';sb.style.borderColor=own!=='general'?'#93c5fd':'var(--border)';sb.style.color=own!=='general'?'#2563eb':'var(--text)';
+      }
+    }else{
+      imgPanel.style.display='none';
+    }
+  }
   sp.classList.add('open');
   const cwr=$('cwrap').getBoundingClientRect();
   let ex,ey;
@@ -1389,6 +1433,23 @@ function canEdit(el){
   if(S.isAdmin)return true;
   const uid=el&&el.dataset&&el.dataset.userId;
   return !uid||uid===S.user.id;
+}
+function imgToggleLock(){
+  const el=S.selEl;if(!el||!el.classList.contains('a-img'))return;
+  const locked=el.dataset.locked==='true';
+  if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
+  el.dataset.locked=locked?'false':'true';
+  el.style.cursor=locked?'move':'default';
+  const lbtn=$('spick-img-lock');
+  if(lbtn){lbtn.textContent=locked?'🔓 Unlocked':'🔒 Locked';lbtn.style.background=locked?'var(--hover)':'#fff7ed';lbtn.style.borderColor=locked?'var(--border)':'#fdba74';}
+}
+function imgSetOwn(own){
+  const el=S.selEl;if(!el||!el.classList.contains('a-img'))return;
+  if(!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Not yours to change');return;}
+  el.dataset.own=own;
+  el.classList.toggle('general',own==='general');
+  el.style.borderColor=own==='general'?'#f97316':S.user.color;
+  selEl(el);applyVis();
 }
 function rmNode(el){
   const nid=el.id.replace('nd-','');
@@ -1968,7 +2029,7 @@ function renderPins(){
     var wrap=mk('div','pin-wrap');wrap.style.cssText='position:absolute;left:'+p.x+'px;top:'+p.y+'px;';
     var pin=mk('div','pin'+(isAct?' active':isPeer?' sess-peer':''));
     pin.style.cssText='background:'+p.color+';border-color:'+p.color+';';
-    if(isPeer)pin.style.boxShadow='0 0 0 2px #fff,0 0 0 4px '+p.color;
+    if(isPeer)pin.style.boxShadow='0 0 0 3px '+p.color+'88';
     wrap.dataset.sessId=p.sessId;wrap.dataset.userId=p.userId;
     pin.innerHTML='<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">'+p.num+'</span>';
     var sess=S.sessions.find(function(s){return s.id===p.sessId;});
@@ -1995,7 +2056,7 @@ function activatePin(id){
   S.activePinId=id;S.expandedPinId=id;
   renderPins();renderFeedback();
   const p=S.pins.find(x=>x.id===id);
-  if(p&&p.sessId)highlightSess(p.sessId);
+  if(p&&p.sessId){S.focusSessId=p.sessId;applyVis();}
   if(p){const w=$('cwrap'),tz=Math.max(1.1,S.zoom);animTo(tz,w.offsetWidth/2-(p.x+12)*tz,w.offsetHeight/2-(p.y+12)*tz);}
   setTimeout(()=>{
     const card=document.querySelector(`.fcard[data-id="${id}"]`);
@@ -2007,7 +2068,7 @@ function activatePinFromCanvas(id){
   S.activePinId=id;S.expandedPinId=id;
   renderPins();renderFeedback();
   const p=S.pins.find(x=>x.id===id);
-  if(p&&p.sessId)highlightSess(p.sessId);
+  if(p&&p.sessId){S.focusSessId=p.sessId;applyVis();}
   setTimeout(()=>{
     const card=document.querySelector('.fcard[data-id="'+id+'"]');
     if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
