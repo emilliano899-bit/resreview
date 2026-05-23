@@ -8,12 +8,12 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{--bg:#e8e8e8;--surface:#fff;--border:#e0e0e0;--border2:#c8c8c8;--text:#1a1a1a;--muted:#888;--muted2:#bbb;--hover:#f5f5f5;--sel:#6366f1;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased;}
-@keyframes dash-move{to{stroke-dashoffset:-20;}}
+@keyframes dash-move{from{stroke-dashoffset:0;}to{stroke-dashoffset:-12;}}
 @keyframes dash-move-fast{to{stroke-dashoffset:-16;}}
 .anim-dash{animation:dash-move 0.5s linear infinite;}
 
 /* ── Header ── */
-.hdr{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:200;}
+.hdr{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:600;}
 .logo{font-weight:800;font-size:13px;display:flex;align-items:center;gap:5px;color:var(--text);letter-spacing:-.02em;margin-right:4px;}
 .nav-tabs{display:flex;gap:2px;background:var(--hover);border:1px solid var(--border);border-radius:7px;padding:2px;}
 .nav-tab{padding:4px 12px;border-radius:5px;border:none;background:transparent;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
@@ -267,19 +267,19 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .mention-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff;}
 
 /* ── Roadmap ── */
-.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;overflow-y:auto;}
+.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;overflow:auto;}
 .rmap.open{display:block;}
 .rmap-inner{padding:28px;}
 .rmap-h{font-size:18px;font-weight:700;margin-bottom:3px;}
 .rmap-s{font-size:12px;color:var(--muted);margin-bottom:22px;}
-.rmap-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.rmap-col{border:1px solid var(--border);border-radius:10px;overflow:visible;}
+.rmap-cols{display:flex;flex-direction:row;gap:12px;min-width:max-content;}
+.rmap-col{border:1px solid var(--border);border-radius:10px;overflow:visible;min-width:240px;width:240px;flex-shrink:0;}
 .rmap-col-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;border-radius:10px 10px 0 0;}
 .rmap-col-hdr-dot{width:8px;height:8px;border-radius:50%;}
 .rmap-ct{font-size:12px;font-weight:700;flex:1;}
 .rmap-cc{font-size:10px;background:var(--hover);border:1px solid var(--border);border-radius:10px;padding:1px 7px;color:var(--muted);}
 .rmap-body{padding:10px;}.rmap-col .rmap-body{max-height:62vh;overflow-y:auto;}
-.rmap-item{border:1px solid var(--border);border-radius:7px;padding:10px 11px;margin-bottom:7px;transition:all .15s;}
+.rmap-item{border:1px solid var(--border);border-radius:7px;padding:10px 11px;margin-bottom:7px;transition:border-color .15s;}
 .rmap-item:hover{border-color:var(--border2);}
 .rmap-item-title{font-size:11px;font-weight:700;margin-bottom:3px;}
 .rmap-item-txt{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.4;}
@@ -425,7 +425,6 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 
 <!-- Style picker (shown when draw tool active) -->
 <div class="spick" id="spick">
-  <div class="user-color-lock" id="color-lock-swatch">● Your color</div>
   <div class="splbl">Thickness</div>
   <div class="sp-sizes">
     <div class="ss on" onclick="setW(1.5,this)"><svg width="22" height="8"><line x1="2" y1="4" x2="20" y2="4" stroke="#1a1a1a" stroke-width="1.5" stroke-linecap="round"/></svg></div>
@@ -482,8 +481,12 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <!-- Roadmap overlay (within canvas area) -->
   <div class="rmap" id="rmap">
     <div class="rmap-inner">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
         <div><div class="rmap-h">Roadmap</div><div class="rmap-s" id="rmap-sub">Community feedback</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button onclick="importUnresolved()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;">⬇ Import unresolved</button>
+          <button onclick="addRmapCol()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--hover);color:var(--text);border:1px solid var(--border);font-weight:600;">+ Add column</button>
+        </div>
       </div>
       <div class="rmap-body" id="rmap-body"><div class="rmap-cols" id="rmap-cols"></div></div>
     </div>
@@ -795,6 +798,8 @@ function init(){
   loadPins();
   renderProductDrop();
   renderTimeline();
+  // Show login on first load
+  setTimeout(function(){openModal('user-modal');},100);
 }
 
 /* ── USER CHIP ── */
@@ -1181,6 +1186,7 @@ function clearSel(){
   S.selEls.forEach(el=>el.classList.remove('ann-sel'));S.selEls=[];
   if(S.selEl){S.selEl.classList.remove('ann-sel');removeRH();removeSvgHandles();}
   S.selEl=null;
+  const sp=$("spick");if(sp)sp.classList.remove("open");
 }
 function addSvgHandles(el){
   removeSvgHandles();
@@ -1541,16 +1547,9 @@ function setupEvents(){
   document.addEventListener('mousemove',onMove);
   document.addEventListener('mouseup',onUp);
   document.addEventListener('keydown',e=>{
-    // Space = pan mode while held
-    if(e.code==='Space'&&!e.target.matches('input,textarea')){e.preventDefault();S.spaceHeld=true;cw.style.cursor='grab';}
-    if(e.target.matches('input,textarea'))return;
+    if(e.target.matches('input,textarea,[contenteditable]'))return;
     if(e.key==='Escape'){clearSel();S.focusSessId=null;applyVis();closeCtxMenu();}
-    if((e.key==='Delete'||e.key==='Backspace')&&S.selEl)deleteSelected();
-    if(e.key==='f'||e.key==='F')fitScreen();
-    const map={s:'sel',c:'cmnt',r:'rect',e:'ellipse',a:'arrow',d:'pencil',t:'text',n:'node'};
-    if(map[e.key])setTool(map[e.key]);
   });
-  document.addEventListener('keyup',e=>{if(e.code==='Space'){S.spaceHeld=false;cw.style.cursor='';}});
   document.addEventListener('paste',e=>{
     const items=e.clipboardData?.items||[];
     for(const item of items){
@@ -1779,7 +1778,7 @@ function renderPins(){
     const lbl=mk('div','pin-label');
     lbl.innerHTML='<span class="pin-label-txt">'+(p.title||p.auth)+'</span><span class="pin-label-sess">'+p.auth+(sess?' · '+sess.name:'')+'</span>';
     wrap.appendChild(pin);wrap.appendChild(lbl);
-    pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
+    pin.addEventListener('click',e=>{e.stopPropagation();activatePinFromCanvas(p.id);});
     makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
     cont.appendChild(wrap);
   });
@@ -1796,6 +1795,16 @@ function activatePin(id){
     if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
     if(wasOpen){const ri=card?.querySelector('.reply-in');if(ri)ri.focus();}
   },120);
+}
+function activatePinFromCanvas(id){
+  S.activePinId=id;S.expandedPinId=id;
+  renderPins();renderFeedback();
+  const p=S.pins.find(x=>x.id===id);
+  if(p&&p.sessId)highlightSess(p.sessId);
+  setTimeout(()=>{
+    const card=document.querySelector('.fcard[data-id="'+id+'"]');
+    if(card)card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },80);
 }
 function updateStats(){
   const hp=$('hpin');if(hp)hp.textContent=S.pins.length+' pins';
@@ -1893,7 +1902,7 @@ function renderFeedback(){
   // Pin list
   sortedPins().forEach(p=>{
     const isAct=p.id===S.activePinId,isExp=p.id===S.expandedPinId;
-    const isOwn=p.userId===S.user.id||S.isAdmin;
+    const isOwn=p.userId===S.user.id;
     const isEditing=S.editingPinId===p.id;
     const card=mk('div','fcard'+(isAct?' on':''));card.dataset.id=p.id;
     const main=mk('div','fcard-main');
@@ -2115,6 +2124,33 @@ function toggleRmapReplies(id){
 function moveRmapItem(pid,cat){
   const p=S.pins.find(x=>x.id===pid);if(!p)return;
   p.rmap_cat=cat;renderRoadmap();renderFeedback();scheduleSync();
+}
+function importUnresolved(){
+  var vers=S.versions.filter(function(v){return v.productId===S.activeProductId;});
+  var curIdx=vers.findIndex(function(v){return v.id===S.curVer;});
+  if(curIdx<=0){toast('No previous version found');return;}
+  var prevId=vers[curIdx-1].id;
+  var prevPins=(SEED[prevId]||[]).filter(function(p){return p.roadmap&&!p.resolved;});
+  if(!prevPins.length){toast('No unresolved tickets in previous version');return;}
+  var added=0;
+  prevPins.forEach(function(p){
+    if(!S.pins.find(function(x){return x.title===p.title&&x.roadmap;})){
+      var c=JSON.parse(JSON.stringify(p));
+      c.id='p'+Date.now()+Math.floor(Math.random()*1e6);
+      c.votes=0;c.voted=false;c.replies=[];c.resolved=false;
+      S.pins.push(c);added++;
+    }
+  });
+  if(!added){toast('All tickets already imported');return;}
+  renderPins();renderFeedback();renderRoadmap();updateStats();scheduleSync();
+  toast('Imported '+added+' unresolved ticket'+(added>1?'s':''));
+}
+function addRmapCol(){
+  const name=prompt('Column name:');
+  if(!name||!name.trim())return;
+  const id='col'+Date.now();
+  RMAP_CATS.push({id,label:name.trim(),emoji:'📌'});
+  renderRoadmap();
 }
 function renameRmapCat(catId,newName){
   const n=(newName||'').trim();if(!n)return;
