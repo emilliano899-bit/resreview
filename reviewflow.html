@@ -17,14 +17,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hdr{height:48px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;z-index:600;}
 .logo{font-weight:800;font-size:13px;display:flex;align-items:center;gap:5px;color:var(--text);letter-spacing:-.02em;margin-right:4px;}
 .nav-tabs{display:flex;gap:2px;background:var(--hover);border:1px solid var(--border);border-radius:7px;padding:2px;}
-.nav-tab{padding:4px 12px;border-radius:5px;border:none;background:transparent;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
+.nav-tab{padding:4px 12px;border-radius:5px;border:none;background:transparent;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s;}
 .nav-tab.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
 .vsep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
 /* User chip */
 .user-chip{display:flex;align-items:center;gap:6px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);cursor:pointer;transition:all .15s;position:relative;}
 .user-chip:hover{border-color:var(--border2);}
 .user-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0;}
-.user-name{font-size:11px;font-weight:700;}
+.user-name{font-size:12px;font-weight:700;}
 .user-sess{font-size:10px;color:var(--muted);padding:1px 6px;border-radius:8px;background:var(--hover);border:1px solid var(--border);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 /* Session dropdown */
 .sess-drop{position:fixed;top:52px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.12);z-index:9000;min-width:240px;overflow:hidden;display:none;}
@@ -202,6 +202,17 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .zbtn:hover{background:var(--hover);color:var(--text);}
 .zlvl{font-size:10px;color:var(--muted);text-align:center;padding:3px 0;background:var(--surface);border:1px solid var(--border);border-radius:6px;}
 
+/* ── Settings panel ── */
+#settings-panel{position:fixed;top:52px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.14);z-index:8000;width:260px;padding:14px;display:none;}
+#settings-panel.open{display:block;}
+.sett-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.sett-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;}
+.sett-lbl{font-size:12px;color:var(--text);font-weight:600;}
+.sett-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+.sett-ctrl{display:flex;align-items:center;gap:5px;}
+.sett-slider{width:90px;accent-color:var(--sel);}
+.sett-val{font-size:11px;color:var(--muted);min-width:28px;text-align:right;}
+.sett-sep{height:1px;background:var(--border);margin:8px 0;}
 /* ── Feedback panel ── */
 .fpanel{width:360px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
 .fphead{padding:11px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
@@ -225,10 +236,10 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .fc-body{flex:1;min-width:0;}
 .fc-meta{display:flex;align-items:center;gap:5px;margin-bottom:4px;}
 .fc-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;}
-.fc-name{font-size:13px;font-weight:700;}
+.fc-name{font-size:14px;font-weight:700;}
 .fc-sess{font-size:11px;color:var(--muted);padding:0 4px;border-radius:3px;background:var(--hover);}
 .fc-time{font-size:11px;color:var(--muted);margin-left:auto;}
-.fc-title{font-size:15px;font-weight:700;margin-bottom:3px;line-height:1.3;}
+.fc-title{font-size:16px;font-weight:700;margin-bottom:3px;line-height:1.3;}
 .fc-txt{font-size:13px;color:#555;line-height:1.4;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .fcard.on .fc-txt{-webkit-line-clamp:unset;}
 .fc-tags{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px;}
@@ -308,7 +319,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .rmap-reply-toggle:hover{color:var(--text);}
 
 /* ── Timeline ── */
-.tline{height:50px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 14px 0 60px;flex-shrink:0;overflow-x:auto;}
+.tline{height:56px;background:var(--surface);border-top:2px solid var(--border);display:flex;align-items:center;padding:0 14px 0 60px;flex-shrink:0;overflow-x:auto;z-index:10;}
 .tline::-webkit-scrollbar{height:0;}
 .ttrack{display:flex;align-items:center;}
 .titem{display:flex;flex-direction:column;align-items:center;cursor:pointer;min-width:84px;}
@@ -519,6 +530,39 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="flist" id="flist"></div>
 </div>
 </div><!-- /main -->
+
+<!-- SETTINGS PANEL -->
+<div id="settings-panel">
+  <div class="sett-title">Settings <span onclick="toggleSettings()" style="cursor:pointer;font-size:16px;color:var(--muted2);line-height:1;">×</span></div>
+  <div class="sett-row">
+    <div><div class="sett-lbl">Text size</div><div class="sett-sub">Canvas labels & nodes</div></div>
+    <div class="sett-ctrl">
+      <input type="range" class="sett-slider" id="sett-text-size" min="7" max="18" step="1" value="10" oninput="applyTextSize(this.value)">
+      <span class="sett-val" id="sett-text-size-val">10px</span>
+    </div>
+  </div>
+  <div class="sett-row">
+    <div><div class="sett-lbl">Node size</div><div class="sett-sub">Node min-width</div></div>
+    <div class="sett-ctrl">
+      <input type="range" class="sett-slider" id="sett-node-size" min="36" max="100" step="4" value="54" oninput="applyNodeSize(this.value)">
+      <span class="sett-val" id="sett-node-size-val">54px</span>
+    </div>
+  </div>
+  <div class="sett-sep"></div>
+  <div class="sett-row">
+    <div><div class="sett-lbl">Dark mode</div></div>
+    <div class="sett-ctrl">
+      <button class="mbtn" id="sett-dark-btn" onclick="toggleDark()" style="font-size:11px;padding:3px 10px;">Off</button>
+    </div>
+  </div>
+  <div class="sett-row">
+    <div><div class="sett-lbl">Panel width</div></div>
+    <div class="sett-ctrl">
+      <input type="range" class="sett-slider" id="sett-panel-w" min="260" max="500" step="20" value="360" oninput="applyPanelWidth(this.value)">
+      <span class="sett-val" id="sett-panel-w-val">360px</span>
+    </div>
+  </div>
+</div>
 
 <!-- TIMELINE -->
 <div class="tline"><div class="ttrack" id="tline-items"></div></div>
@@ -1554,9 +1598,20 @@ function placeShot(url,own,pt){
   el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;width:300px;height:188px;background:url(\''+url+'\') center/cover;border-radius:6px;border:2px solid '+(own==='me'?S.user.color:'#aaa')+';cursor:move;z-index:10;';
   el.dataset.own=own;
   annTag(el);annClick(el);makeDraggable(el);
-  // Lock button
+  // Corner controls: delete + lock
+  const imgCtrl=mk('div','');
+  imgCtrl.style.cssText='position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:20;';
+  const delBtn=mk('div','');
+  delBtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
+  delBtn.textContent='✕';delBtn.title='Delete';
+  delBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(el.dataset.locked==='true'&&!S.isAdmin){toast('Unlock first');return;}
+    if(!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Not yours');return;}
+    el.remove();
+  });
   const lbtn=mk('div','');
-  lbtn.style.cssText='position:absolute;top:4px;right:4px;background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;z-index:20;user-select:none;line-height:1;';
+  lbtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
   lbtn.textContent='🔓';lbtn.title='Lock element';
   lbtn.addEventListener('click',e=>{
     e.stopPropagation();
@@ -1567,7 +1622,7 @@ function placeShot(url,own,pt){
     el.style.cursor=locked?'move':'default';
     el.style.opacity=locked?'1':'0.85';
   });
-  el.appendChild(lbtn);
+  imgCtrl.appendChild(delBtn);imgCtrl.appendChild(lbtn);el.appendChild(imgCtrl);
   $('annots').appendChild(el);
 }
 function loadCanvasImage(input){
@@ -1576,7 +1631,7 @@ function loadCanvasImage(input){
   r.onload=ev=>{
     const mi=$('main-img');
     if(mi&&mi.style.backgroundImage&&mi.style.backgroundImage!==''&&mi.style.backgroundImage!=='none'){
-      S.pendingImgUrl=ev.target.result;S.pastedPt=null;openModal('img-own-modal');
+      placeShot(ev.target.result,'me',{x:100+Math.random()*80,y:60+Math.random()*60});
     }else{mi.style.backgroundImage=`url('${ev.target.result}')`;mi.style.backgroundSize='cover';mi.style.backgroundPosition='center';const ph=$('img-ph');if(ph)ph.style.display='none';}
   };r.readAsDataURL(file);
 }
@@ -1643,7 +1698,7 @@ function ctxPasteImg(){
   navigator.clipboard.read().then(items=>{
     for(const item of items){
       const t=item.types.find(x=>x.startsWith('image/'));
-      if(t){item.getType(t).then(blob=>{const fr=new FileReader();fr.onload=ev=>{S.pendingImgUrl=ev.target.result;S.pastedPt=S._ctxPt;openModal('img-own-modal');};fr.readAsDataURL(blob);});return;}
+      if(t){item.getType(t).then(blob=>{const fr=new FileReader();fr.onload=ev=>{placeShot(ev.target.result,'me',S._ctxPt||{x:100,y:80});};fr.readAsDataURL(blob);});return;}
     }
     toast('No image in clipboard');
   }).catch(()=>toast('Clipboard access denied'));
@@ -1667,9 +1722,9 @@ function setupEvents(){
       if(item.type.startsWith('image/')){
         const fr=new FileReader();const blob=item.getAsFile();
         fr.onload=ev=>{
-          const mi=$('main-img');S.pendingImgUrl=ev.target.result;S.pastedPt={x:80+Math.random()*120,y:60+Math.random()*80};
-          if(mi&&mi.style.backgroundImage&&mi.style.backgroundImage!=='')openModal('img-own-modal');
-          else{mi.style.backgroundImage=`url('${ev.target.result}')`;mi.style.backgroundSize='cover';mi.style.backgroundPosition='center';const ph=$('img-ph');if(ph)ph.style.display='none';}
+          const mi=$('main-img');const _url=ev.target.result;const _pt={x:80+Math.random()*120,y:60+Math.random()*80};
+          if(mi&&mi.style.backgroundImage&&mi.style.backgroundImage!==''){placeShot(_url,'me',S._ctxPt||_pt);}
+          else{mi.style.backgroundImage=`url('${_url}')`;mi.style.backgroundSize='cover';mi.style.backgroundPosition='center';const ph=$('img-ph');if(ph)ph.style.display='none';}
         };fr.readAsDataURL(blob);return;
       }
     }
@@ -2058,8 +2113,7 @@ function renderFeedback(){
     const isEditing=S.editingPinId===p.id;
     const card=mk('div','fcard'+(isAct?' on':''));card.dataset.id=p.id;
     const main=mk('div','fcard-main');
-    const top=mk('div','fc-top');
-    // Session circle (shown at top of body, not in fc-top)
+    // Session circle in titleRow
     const sess=S.sessions.find(s=>s.id===p.sessId);
     const body=mk('div','fc-body');
     // Title row: title text + session number circle on right
@@ -2131,7 +2185,7 @@ function renderFeedback(){
       if(p.replies.length){const rc=mk('button','reply-count','💬 '+p.replies.length+' repl'+(p.replies.length===1?'y':'ies')+' ▾');rc.onclick=e=>{e.stopPropagation();activatePin(p.id);};foot.appendChild(rc);}
       body.appendChild(foot);
     }
-    top.appendChild(pinDot);top.appendChild(body);main.appendChild(top);card.appendChild(main);
+    main.appendChild(body);card.appendChild(main);
     if(isExp&&!isEditing&&p.replies.length){
       const thr=mk('div','reply-thread');
       p.replies.forEach(r=>{const ri=mk('div','r-item');const av=mk('div','r-av',r.av);av.style.background=r.color||COLORS[1];const bub=mk('div','r-bubble');if(r.userId===S.user.id)bub.style.cssText='background:'+r.color+'18;border-left:3px solid '+r.color+';border-color:'+r.color+'55;';
@@ -2345,7 +2399,7 @@ function submitRmapReply(pid){
   renderRoadmap();renderFeedback();scheduleSync();
 }
 function toggleResolved(id){const p=S.pins.find(x=>x.id===id);if(!p)return;p.resolved=!p.resolved;renderRoadmap();renderFeedback();scheduleSync();}
-function goToPin(id){showView('canvas');setTimeout(()=>activatePin(id),80);}
+function goToPin(id){showView('canvas');setTimeout(()=>activatePin(id),160);}
 
 /* ── TIMELINE ── */
 function renderTimeline(){
@@ -2368,6 +2422,38 @@ function renderTimeline(){
   }
 }
 
+function toggleSettings(){
+  const p=document.getElementById('settings-panel');
+  if(p)p.classList.toggle('open');
+}
+function applyTextSize(v){
+  document.getElementById('sett-text-size-val').textContent=v+'px';
+  document.querySelectorAll('.a-label').forEach(el=>el.style.fontSize=v+'px');
+  document.querySelectorAll('.node-el').forEach(el=>el.style.fontSize=(Math.max(6,parseInt(v)-2))+'px');
+}
+function applyNodeSize(v){
+  document.getElementById('sett-node-size-val').textContent=v+'px';
+  document.querySelectorAll('.node-el').forEach(el=>el.style.minWidth=v+'px');
+}
+function applyPanelWidth(v){
+  document.getElementById('sett-panel-w-val').textContent=v+'px';
+  const fp=document.querySelector('.fpanel');if(fp)fp.style.width=v+'px';
+}
+function toggleDark(){
+  const r=document.documentElement;
+  const isDark=r.style.getPropertyValue('--bg')==='#1a1a1a';
+  if(isDark){
+    r.style.setProperty('--bg','#e8e8e8');r.style.setProperty('--surface','#fff');r.style.setProperty('--border','#e0e0e0');r.style.setProperty('--border2','#c8c8c8');r.style.setProperty('--text','#1a1a1a');r.style.setProperty('--muted','#888');r.style.setProperty('--muted2','#bbb');r.style.setProperty('--hover','#f5f5f5');
+    document.getElementById('sett-dark-btn').textContent='Off';
+  }else{
+    r.style.setProperty('--bg','#111');r.style.setProperty('--surface','#1e1e1e');r.style.setProperty('--border','#333');r.style.setProperty('--border2','#555');r.style.setProperty('--text','#f0f0f0');r.style.setProperty('--muted','#999');r.style.setProperty('--muted2','#555');r.style.setProperty('--hover','#2a2a2a');
+    document.getElementById('sett-dark-btn').textContent='On';
+  }
+}
+document.addEventListener('click',function(e){
+  const sp=document.getElementById('settings-panel');
+  if(sp&&sp.classList.contains('open')&&!sp.contains(e.target)&&!e.target.closest('#settings-btn'))sp.classList.remove('open');
+});
 document.addEventListener("DOMContentLoaded",init);
 </script>
 </body>
