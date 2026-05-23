@@ -1736,7 +1736,7 @@ function renderPins(){
     pin.innerHTML=`<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">${p.num}</span>`;
     const sess=S.sessions.find(s=>s.id===p.sessId);
     const lbl=mk('div','pin-label');
-    lbl.innerHTML=`<span class="pin-label-txt">${p.auth}</span>${sess?`<span class="pin-label-sess">${sess.name}</span>`:''}`;
+    lbl.innerHTML='<span class="pin-label-txt">'+p.auth+'</span>'+(sess?'<span class="pin-label-sess">'+sess.name+'</span>':'');
     wrap.appendChild(pin);wrap.appendChild(lbl);
     pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
     makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
