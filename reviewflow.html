@@ -1156,9 +1156,26 @@ function makeDraggable(el,onmove){
 function selEl(el){
   clearSel();S.selEl=el;el.classList.add('ann-sel');
   const resizable=el.classList.contains('a-img')||el.classList.contains('a-rect')||el.classList.contains('a-ellipse');
-  if(resizable){addRH(el);const sp=$('spick');if(sp)sp.classList.add('open');}
   const isSvgEl=el.tagName==='line'||el.tagName==='path';
-  if(isSvgEl){addSvgHandles(el);const sp=$('spick');if(sp)sp.classList.add('open');}
+  if(resizable||isSvgEl){
+    if(resizable)addRH(el); else addSvgHandles(el);
+    const sp=$('spick');if(!sp)return;
+    sp.classList.add('open');
+    const cwr=$('cwrap').getBoundingClientRect();
+    let ex,ey;
+    if(isSvgEl){
+      const x1=parseFloat(el.getAttribute('x1')||el.getBoundingClientRect().left),
+            y1=parseFloat(el.getAttribute('y1')||el.getBoundingClientRect().top);
+      ex=x1*S.zoom+S.panX+cwr.left; ey=y1*S.zoom+S.panY+cwr.top;
+    }else{
+      const r=el.getBoundingClientRect();ex=r.right+8;ey=r.top;
+    }
+    const spW=184,spH=180;
+    ex=Math.min(ex,window.innerWidth-spW-8);
+    ey=Math.min(ey,window.innerHeight-spH-8);
+    ey=Math.max(ey,8);
+    sp.style.left=ex+'px';sp.style.top=ey+'px';
+  }
 }
 function clearSel(){
   S.selEls.forEach(el=>el.classList.remove('ann-sel'));S.selEls=[];
@@ -1364,6 +1381,9 @@ function renderNodes(){
           S.connections.push({id:'c'+Date.now(),fromId:S.connecting.fromNid,fd:S.connecting.fromDir,toId:n.id,td:dir});
           renderConns();toast('Connected');
         }
+        if(S.connTempLine){S.connTempLine.remove();S.connTempLine=null;}
+        document.querySelectorAll('.node-port').forEach(p=>p.style.transform='');
+        S.connecting=null;
       });
       el.appendChild(port);
     });
@@ -1419,6 +1439,27 @@ function applyVis(){
     }
   });
   if(S.viewMode==='session'&&!sid){ann.style.display='none';svg.style.display='none';nl.style.display='none';}
+  /* Hide conn-lines where either endpoint node is hidden */
+  if(S.viewMode==='session'){
+    document.querySelectorAll('.conn-line').forEach(function(cl){
+      var pid=cl.getAttribute('data-from'); // won't exist, handled below
+      cl.style.display='';
+    });
+    if(sid){
+      S.connections.forEach(function(c){
+        var fn=S.nodes.find(function(x){return x.id===c.fromId;}),tn=S.nodes.find(function(x){return x.id===c.toId;});
+        var vis=(fn&&(fn.sessId===sid))&&(tn&&(tn.sessId===sid));
+        var fel=document.getElementById('nd-'+c.fromId),tel=document.getElementById('nd-'+c.toId);
+        // find the conn-line by index — just re-render with filter instead
+      });
+      // Simpler: just re-call renderConns with visibility filter
+      document.querySelectorAll('.conn-line').forEach(function(cl,i){
+        var c=S.connections[i];if(!c)return;
+        var fn=S.nodes.find(function(x){return x.id===c.fromId;}),tn=S.nodes.find(function(x){return x.id===c.toId;});
+        if(!fn||!tn||(fn.sessId!==sid)||(tn.sessId!==sid))cl.style.display='none';
+      });
+    }
+  }
 }
 
 /* ── SCREENSHOT ── */
@@ -1736,7 +1777,7 @@ function renderPins(){
     pin.innerHTML=`<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">${p.num}</span>`;
     const sess=S.sessions.find(s=>s.id===p.sessId);
     const lbl=mk('div','pin-label');
-    lbl.innerHTML='<span class="pin-label-txt">'+p.auth+'</span>'+(sess?'<span class="pin-label-sess">'+sess.name+'</span>':'');
+    lbl.innerHTML='<span class="pin-label-txt">'+(p.title||p.auth)+'</span><span class="pin-label-sess">'+p.auth+(sess?' · '+sess.name:'')+'</span>';
     wrap.appendChild(pin);wrap.appendChild(lbl);
     pin.addEventListener('click',e=>{e.stopPropagation();activatePin(p.id);});
     makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
