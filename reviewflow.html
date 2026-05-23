@@ -137,9 +137,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .a-rect{position:absolute;border-radius:3px;cursor:pointer;}
 .a-ellipse{position:absolute;border-radius:50%;cursor:pointer;}
 .a-label{position:absolute;font-size:10px;padding:2px 7px;border-radius:4px;white-space:pre-wrap;word-break:break-word;cursor:pointer;font-family:inherit;max-width:280px;}
-.a-img{position:absolute;cursor:move;border:2px solid transparent;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);}
-.a-img.sel{border-color:var(--sel);}
-.a-img.general{box-shadow:0 4px 20px rgba(0,0,0,.15),0 0 0 2px #f97316;}
+.a-img{position:absolute;cursor:move;border:none;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.a-img.sel{outline:2px solid var(--sel);outline-offset:2px;}
+.a-img.general{}
 .ann-sel{outline:2px dashed var(--sel)!important;outline-offset:3px;}
 svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 /* Resize handles */
@@ -468,18 +468,18 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     </div>
   </div>
   <div id="spick-del" style="display:none;padding-top:4px;border-top:1px solid var(--border);">
-    <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🗑 Delete</button>
+    <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="3.5" x2="12" y2="3.5"/><path d="M5 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1"/><rect x="3" y="3.5" width="8" height="9" rx="1"/><line x1="5.5" y1="6" x2="5.5" y2="10"/><line x1="8.5" y1="6" x2="8.5" y2="10"/></svg> Delete</button>
   </div>
   <div id="spick-img" style="display:none;flex-direction:column;gap:8px;">
     <div id="spick-img-sess" style="font-size:10px;color:var(--muted);font-weight:600;"></div>
     <div class="splbl" style="margin-bottom:0;">Ownership</div>
     <div style="display:flex;gap:5px;">
-      <button id="spick-img-own-gen" onclick="imgSetOwn('general')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;">🌐 General</button>
-      <button id="spick-img-own-sess" onclick="imgSetOwn('me')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;">📌 Session</button>
+      <button id="spick-img-own-gen" onclick="imgSetOwn('general')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5c-1.5 1.5-2.5 3.2-2.5 5.5s1 4 2.5 5.5"/><path d="M7 1.5c1.5 1.5 2.5 3.2 2.5 5.5s-1 4-2.5 5.5"/><line x1="1.5" y1="7" x2="12.5" y2="7"/></svg> General</button>
+      <button id="spick-img-own-sess" onclick="imgSetOwn('me')" style="flex:1;padding:4px 6px;border-radius:6px;font-size:10px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--hover);color:var(--text);transition:all .15s;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 13C7 13 2 8.8 2 5.5a5 5 0 0110 0C12 8.8 7 13 7 13z"/><circle cx="7" cy="5.5" r="1.5"/></svg> Session</button>
     </div>
-    <button id="spick-img-lock" onclick="imgToggleLock()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--hover);color:var(--text);cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🔓 Unlocked</button>
+    <button id="spick-img-lock" onclick="imgToggleLock()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--hover);color:var(--text);cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="6" width="9" height="7" rx="1"/><path d="M4.5 6V4.5a2.5 2.5 0 014.5-1.5"/></svg> Unlocked</button>
     <div style="border-top:1px solid var(--border);padding-top:4px;">
-      <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🗑 Delete</button>
+      <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="2" y1="3.5" x2="12" y2="3.5"/><path d="M5 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1"/><rect x="3" y="3.5" width="8" height="9" rx="1"/><line x1="5.5" y1="6" x2="5.5" y2="10"/><line x1="8.5" y1="6" x2="8.5" y2="10"/></svg> Delete</button>
     </div>
   </div>
 </div>
@@ -493,7 +493,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="img-area" id="main-img" style="position:absolute;left:80px;top:60px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14);">
         <img id="canvas-img" alt="">
         <div class="img-ph" id="img-ph">
-          <div class="img-ph-icon">🏠</div>
+          <div class="img-ph-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l9-9 9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg></div>
           <div class="img-ph-title">Load your screenshot</div>
           <div class="img-ph-sub">Ctrl+V / ⌘+V to paste<br>or right-click the canvas<br>or choose a file</div>
           <label class="img-load-btn">
@@ -508,6 +508,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="view-toggle">
     <button class="vt-btn" id="vm-session" data-vm="session" onclick="setViewMode('session')">Session</button>
     <button class="vt-btn on" id="vm-full" data-vm="full" onclick="setViewMode('full')">Full</button>
+    <button class="vt-btn" id="vm-comment" data-vm="comment" onclick="setViewMode('comment')">Comment</button>
   </div>
   <!-- Zoom -->
   <div class="zctrls">
@@ -522,7 +523,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="rmap-toolbar">
       <div><div class="rmap-h">Roadmap</div><div class="rmap-s" id="rmap-sub">Community feedback</div></div>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-        <button onclick="importUnresolved()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;">⬇ Import unresolved</button>
+        <button onclick="importUnresolved()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:#f0f0ff;color:#6366f1;border:1px solid #a5b4fc;font-weight:600;"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 1.5v8M4 7l3 3 3-3"/><line x1="1.5" y1="12" x2="12.5" y2="12"/></svg> Import unresolved</button>
         <button onclick="addRmapCol()" style="font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--hover);color:var(--text);border:1px solid var(--border);font-weight:600;">+ Add category</button>
       </div>
     </div>
@@ -590,7 +591,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <!-- User setup -->
 <div class="mover" id="user-modal">
   <div class="modal narrow">
-    <div class="mtit">👋 Who are you?</div>
+    <div class="mtit">Who are you?</div>
     <div class="mf"><div class="ml">Your name</div><input class="mi" id="user-name-in" placeholder="e.g. User 1" autocomplete="off"></div>
     <div class="mf"><div class="ml">Your color — used for all your annotations</div>
       <div class="sess-color-grid" id="user-color-grid"></div>
@@ -612,8 +613,8 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <!-- Pin modal -->
 <div class="mover" id="pin-modal">
   <div class="modal">
-    <div class="mtit">💬 New Comment</div>
-    <div class="mf"><div class="ml">Problem title</div><input class="mi" id="pin-title-in" placeholder="e.g. Flooring swatches too small"></div>
+    <div class="mtit">New Comment</div>
+    <div class="mf"><div class="ml">Comment title</div><input class="mi" id="pin-title-in" placeholder="e.g. Flooring swatches too small"></div>
     <div class="mf"><div class="ml">Description (optional)</div><textarea class="mta" id="pin-txt-in" placeholder="More detail…"></textarea></div>
     <div class="mf"><div class="ml">Tags</div><div class="tag-picker" id="tag-pick-wrap"></div></div>
     <div class="mf"><div class="ml">Reference link (optional)</div><input class="mi" id="pin-link-in" placeholder="https://docs.google.com/…"></div>
@@ -630,12 +631,12 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="mf"><div class="ml">Who does this belong to?</div>
       <div class="img-own-opts">
         <div class="img-own-opt on" id="own-me" onclick="pickOwn('me')">
-          <div class="img-own-opt-icon">👤</div>
+          <div class="img-own-opt-icon"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="4.5" r="2.5"/><path d="M1.5 13c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/></svg></div>
           <div class="img-own-opt-lbl">Mine</div>
           <div class="img-own-opt-desc">Tagged to you + session</div>
         </div>
         <div class="img-own-opt" id="own-gen" onclick="pickOwn('general')">
-          <div class="img-own-opt-icon">🌐</div>
+          <div class="img-own-opt-icon"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5c-1.5 1.5-2.5 3.2-2.5 5.5s1 4 2.5 5.5"/><path d="M7 1.5c1.5 1.5 2.5 3.2 2.5 5.5s-1 4-2.5 5.5"/><line x1="1.5" y1="7" x2="12.5" y2="7"/></svg></div>
           <div class="img-own-opt-lbl">General</div>
           <div class="img-own-opt-desc">Reference screenshot for all</div>
         </div>
@@ -802,7 +803,7 @@ const S={
   drawArrow:false,arrowStart:null,tempArrow:null,
   drawFree:false,freePath:null,freePts:[],
   connectFrom:null,connecting:null,connTempLine:null,nodes:[],connections:[],
-  products:[{id:'prod1',name:'RESVR App',icon:'📱'},{id:'prod2',name:'Website',icon:'🌐'}],
+  products:[{id:'prod1',name:'RESVR App',icon:''},{id:'prod2',name:'Website',icon:''}],
   versions:[
     {id:'v1.0',lbl:'v1.0',status:'shipped',name:'Initial Release',productId:'prod1'},
     {id:'v1.1',lbl:'v1.1',status:'cur',name:'Home Configurator',productId:'prod1'},
@@ -951,7 +952,7 @@ function renderProductDrop(){
     hdr.innerHTML=`<span class="pd-prod-name">${p.name}</span>`;
     if(S.isAdmin){
       const acts=mk('div','pd-prod-actions');
-      const ren=mk('button','pd-act-btn','✎ Rename');ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('product',p.id);};
+      const ren=mk('button','pd-act-btn');ren.innerHTML='<svg width=\"10\" height=\"10\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M9.5 1.5l3 3L4 13H1V10L9.5 1.5z\"/></svg> Rename';ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('product',p.id);};
       const del=mk('button','pd-act-btn del','✕ Delete');del.onclick=e=>{e.stopPropagation();if(confirm('Delete '+p.name+'?')){S.products=S.products.filter(x=>x.id!==p.id);S.versions=S.versions.filter(x=>x.productId!==p.id);if(S.activeProductId===p.id){S.activeProductId=S.products[0]?.id||'';S.curVer=prodVers(S.activeProductId)[0]?.id||'';}closeProdDrop();renderProductDrop();renderTimeline();}};
       acts.appendChild(ren);acts.appendChild(del);hdr.appendChild(acts);
     }
@@ -965,7 +966,7 @@ function renderProductDrop(){
       const nm=mk('span','pd-ver-name',v.name);
       vr.appendChild(dot);vr.appendChild(lbl);vr.appendChild(nm);
       if(S.isAdmin){
-        const ren=mk('span','pd-ver-ren','✎');ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('version',v.id);};vr.appendChild(ren);
+        const ren=mk('span','pd-ver-ren');ren.innerHTML='<svg width=\"10\" height=\"10\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M9.5 1.5l3 3L4 13H1V10L9.5 1.5z\"/></svg>';ren.onclick=e=>{e.stopPropagation();closeProdDrop();openRename('version',v.id);};vr.appendChild(ren);
         const vdel=mk('span','pd-ver-del','✕');vdel.title='Delete version';vdel.onclick=e=>{e.stopPropagation();const pvs=prodVers(p.id);if(pvs.length<=1){toast('Cannot delete the last version');return;}if(!confirm('Delete version "'+v.lbl+' – '+v.name+'"?'))return;S.versions=S.versions.filter(x=>x.id!==v.id);if(S.curVer===v.id){const rem=prodVers(p.id);S.curVer=rem[0]?.id||'';}closeProdDrop();renderProductDrop();renderTimeline();};vr.appendChild(vdel);
       }
       vr.onclick=e=>{e.stopPropagation();switchProduct(p.id);pickVer(v.id);};
@@ -1090,7 +1091,7 @@ function renderSessDrop(){
       document.querySelectorAll('[data-user-id="'+S.user.id+'"]').forEach(el=>{
         if(el.classList.contains('a-rect')||el.classList.contains('a-ellipse'))el.style.borderColor=c;
         if(el.classList.contains('a-label'))el.style.borderColor=c;
-        if(el.classList.contains('a-img')&&el.dataset.own==='me')el.style.borderColor=c;
+        // a-img has no border
         if(el.tagName==='line'||el.tagName==='path')el.setAttribute('stroke',c);
       });
       updateChip();renderPins();renderFeedback();renderRoadmap();renderNodes();renderSessDrop();
@@ -1286,7 +1287,7 @@ function selEl(el){
       const sessEl=$('spick-img-sess');
       if(sessEl){const sess=S.sessions.find(function(s){return s.id===el.dataset.sessId;});sessEl.textContent=sess?'Session '+sess.num+': '+sess.name:'';sessEl.style.display=el.dataset.sessId?'block':'none';}
       const lbtn=$('spick-img-lock');
-      if(lbtn){const locked=el.dataset.locked==='true';lbtn.textContent=locked?'🔒 Locked':'🔓 Unlocked';lbtn.style.background=locked?'#fff7ed':'var(--hover)';lbtn.style.borderColor=locked?'#fdba74':'var(--border)';}
+      if(lbtn){const locked=el.dataset.locked==='true';lbtn.innerHTML=(locked?'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 015 0V6\"/></svg>':'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 014.5-1.5\"/></svg>')+' '+(locked?'Locked':'Unlocked');lbtn.style.background=locked?'#fff7ed':'var(--hover)';lbtn.style.borderColor=locked?'#fdba74':'var(--border)';}
       const own=el.dataset.own||'me';
       const gb=$('spick-img-own-gen'),sb=$('spick-img-own-sess');
       if(gb&&sb){
@@ -1441,14 +1442,13 @@ function imgToggleLock(){
   el.dataset.locked=locked?'false':'true';
   el.style.cursor=locked?'move':'default';
   const lbtn=$('spick-img-lock');
-  if(lbtn){lbtn.textContent=locked?'🔓 Unlocked':'🔒 Locked';lbtn.style.background=locked?'var(--hover)':'#fff7ed';lbtn.style.borderColor=locked?'var(--border)':'#fdba74';}
+  if(lbtn){lbtn.innerHTML=(locked?'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 014.5-1.5\"/></svg>':'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 015 0V6\"/></svg>')+' '+(locked?'Unlocked':'Locked');lbtn.style.background=locked?'var(--hover)':'#fff7ed';lbtn.style.borderColor=locked?'var(--border)':'#fdba74';}
 }
 function imgSetOwn(own){
   const el=S.selEl;if(!el||!el.classList.contains('a-img'))return;
   if(!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Not yours to change');return;}
   el.dataset.own=own;
   el.classList.toggle('general',own==='general');
-  el.style.borderColor=own==='general'?'#f97316':S.user.color;
   selEl(el);applyVis();
 }
 function rmNode(el){
@@ -1608,6 +1608,10 @@ function applyVis(){
     if(S.viewMode==='session'){
       if(!sid){el.style.display='none';el.style.opacity='';}
       else{el.style.display=(!el.dataset.sessId||el.dataset.sessId===sid)?'':'none';el.style.opacity='';}
+    }else if(S.viewMode==='comment'){
+      // Comment mode: show only elements that belong to a session; dim those not in focusSessId
+      if(!el.dataset.sessId){el.style.display='none';el.style.opacity='';}
+      else{el.style.display='';el.style.opacity=(!sid||el.dataset.sessId===sid)?'1':'0.38';}
     }else{
       el.style.display='';el.style.opacity=(!sid||!el.dataset.sessId||el.dataset.sessId===sid)?'1':'0.38';
     }
@@ -1620,7 +1624,7 @@ function applyVis(){
       cl.style.opacity=(!sid||(fn&&fn.sessId===sid)||(tn&&tn.sessId===sid))?'1':'0.38';
     });
   }
-  if(S.viewMode==='session'&&!sid){ann.style.display='none';svg.style.display='none';nl.style.display='none';}
+  if((S.viewMode==='session'||S.viewMode==='comment')&&!sid&&S.viewMode==='session'){ann.style.display='none';svg.style.display='none';nl.style.display='none';}
   /* Hide conn-lines where either endpoint node is hidden */
   if(S.viewMode==='session'){
     document.querySelectorAll('.conn-line').forEach(function(cl){
@@ -1656,7 +1660,7 @@ function confirmImgOwn(){
 function placeShot(url,own,pt){
   if(!url)return;
   const el=mk('div','a-img');
-  el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;width:300px;height:188px;background:url(\''+url+'\') center/cover;border-radius:6px;border:2px solid '+(own==='me'?S.user.color:'#aaa')+';cursor:move;z-index:10;';
+  el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;width:300px;height:188px;background:url(\''+url+'\') center/cover;border-radius:6px;cursor:move;z-index:10;';
   el.dataset.own=own;
   annTag(el);annClick(el);makeDraggable(el);
   // Corner controls: delete + lock
@@ -1664,7 +1668,7 @@ function placeShot(url,own,pt){
   imgCtrl.style.cssText='position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:20;';
   const delBtn=mk('div','');
   delBtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
-  delBtn.textContent='✕';delBtn.title='Delete';
+  delBtn.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><line x1=\"2\" y1=\"3.5\" x2=\"12\" y2=\"3.5\"/><path d=\"M5 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1\"/><rect x=\"3\" y=\"3.5\" width=\"8\" height=\"9\" rx=\"1\"/></svg>';delBtn.title='Delete';
   delBtn.addEventListener('click',e=>{
     e.stopPropagation();
     if(el.dataset.locked==='true'&&!S.isAdmin){toast('Unlock first');return;}
@@ -1673,13 +1677,13 @@ function placeShot(url,own,pt){
   });
   const lbtn=mk('div','');
   lbtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
-  lbtn.textContent='🔓';lbtn.title='Lock element';
+  lbtn.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 014.5-1.5\"/></svg>';lbtn.title='Lock element';
   lbtn.addEventListener('click',e=>{
     e.stopPropagation();
     const locked=el.dataset.locked==='true';
     if(locked&&!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Only admin or owner can unlock');return;}
     el.dataset.locked=locked?'false':'true';
-    lbtn.textContent=locked?'🔓':'🔒';
+    lbtn.innerHTML=locked?'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 014.5-1.5\"/></svg>':'<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 015 0V6\"/></svg>';
     el.style.cursor=locked?'move':'default';
     el.style.opacity=locked?'1':'0.85';
   });
@@ -1702,15 +1706,15 @@ function setupCtxMenu(){
   $('cwrap').addEventListener('contextmenu',e=>{
     e.preventDefault();S._ctxPt=cvPt(e);
     const m=$('ctx-menu');m.innerHTML='';
-    [[' 💬 Add Comment',()=>startPin(S._ctxPt)],
-     [' 📐 Add Node',()=>{$('node-label-in').value='';openModal('node-modal');}],
-     [' 🔗 Add Link',()=>addLinkCard(S._ctxPt)],
-     [' 📷 Paste Screenshot',ctxPasteImg]].forEach(([lbl,fn])=>{
+    [[' Add Comment',()=>startPin(S._ctxPt)],
+     [' Add Node',()=>{$('node-label-in').value='';openModal('node-modal');}],
+     [' Add Link',()=>addLinkCard(S._ctxPt)],
+     [' Paste Screenshot',ctxPasteImg]].forEach(([lbl,fn])=>{
       const it=mk('div','ctx-item',lbl);it.onclick=()=>{closeCtxMenu();fn();};m.appendChild(it);
     });
     if(S.selEl||S.selEls.length>0){
       m.appendChild(mk('div','ctx-sep'));
-      const del=mk('div','ctx-item','🗑 Delete selected');del.style.color='#ef4444';
+      const del=mk('div','ctx-item','Delete selected');del.style.color='#ef4444';
       del.onclick=()=>{closeCtxMenu();deleteSelected();};m.appendChild(del);
     }
     m.style.cssText=`display:block;left:${e.clientX}px;top:${e.clientY}px;`;
@@ -1742,7 +1746,7 @@ function placeLink(pt,url){
   const el=mk('div','a-link-card');
   el.dataset.href=url;
   el.style.cssText='position:absolute;left:'+pt.x+'px;top:'+pt.y+'px;';
-  const ic=mk('div','alc-icon');ic.textContent='🔗';
+  const ic=mk('div','alc-icon');ic.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M5.5 7.5a3 3 0 004.2.3l1.7-1.7a3 3 0 00-4.24-4.24L6.1 3\"/><path d=\"M8.5 6.5a3 3 0 00-4.2-.3L2.6 7.9a3 3 0 004.24 4.24L7.9 11\"/></svg>';
   const bd=mk('div','alc-body');
   const dm=mk('div','alc-domain');dm.textContent=domain;
   const ul=mk('div','alc-url');ul.textContent=url;ul.title=url;
@@ -2099,7 +2103,7 @@ function renderTagFilters(){
     filterRow.appendChild(b);
   });
   if(S.isAdmin){
-    const mgBtn=mk('button','');mgBtn.textContent='⚙ Tags';
+    const mgBtn=mk('button','');mgBtn.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M1.5 1.5h6l5 5-5.5 5.5-5-5V1.5z\"/><circle cx=\"5\" cy=\"5\" r=\"1\"/></svg> Tags';
     mgBtn.style.cssText='margin-left:auto;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--border);background:'+(S.tagMgrOpen?'var(--text)':'transparent')+';color:'+(S.tagMgrOpen?'#fff':'var(--muted)')+';cursor:pointer;font-family:inherit;flex-shrink:0;transition:all .15s;';
     mgBtn.onclick=e=>{e.stopPropagation();S.tagMgrOpen=!S.tagMgrOpen;renderTagFilters();};
     filterRow.appendChild(mgBtn);
@@ -2139,7 +2143,7 @@ function renderFeedback(){
     const hlbl=mk('span','');hlbl.style.cssText='font-size:10px;font-weight:700;color:var(--sel);';hlbl.textContent='New comment';
     const hx=mk('span','');hx.textContent='×';hx.style.cssText='cursor:pointer;font-size:15px;color:var(--muted2);line-height:1;';hx.onclick=cancelPin;
     hdr.appendChild(hlbl);hdr.appendChild(hx);draft.appendChild(hdr);
-    const ti=mk('input','mi');ti.id='draft-title';ti.placeholder='Problem title…';ti.style.cssText='width:100%;margin-bottom:5px;font-size:12px;font-weight:600;';
+    const ti=mk('input','mi');ti.id='draft-title';ti.placeholder='Comment title…';ti.style.cssText='width:100%;margin-bottom:5px;font-size:12px;font-weight:600;';
     draft.appendChild(ti);
     const ta=mk('textarea','mta');ta.id='draft-body';ta.placeholder='Description (optional)…';ta.style.cssText='width:100%;margin-bottom:5px;font-size:11px;min-height:44px;resize:none;';ta.oninput=()=>autosize(ta);
     draft.appendChild(ta);
@@ -2194,7 +2198,7 @@ function renderFeedback(){
     const meta=mk('div','fc-meta');
     meta.innerHTML='<div class="fc-av" style="background:'+p.color+'">'+p.av+'</div><span class="fc-name">'+p.auth+'</span><span class="fc-time">'+p.time+'</span>';
     if(isOwn&&!isEditing){
-      const eb=mk('span','');eb.textContent='✎';eb.title='Edit comment';
+      const eb=mk('span','');eb.innerHTML='<svg width=\"10\" height=\"10\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M9.5 1.5l3 3L4 13H1V10L9.5 1.5z\"/></svg>';eb.title='Edit comment';
       eb.style.cssText='cursor:pointer;font-size:12px;color:var(--muted2);margin-left:auto;padding:1px 5px;border-radius:3px;transition:color .12s;';
       eb.onmouseenter=()=>eb.style.color='var(--text)';eb.onmouseleave=()=>eb.style.color='var(--muted2)';
       eb.onclick=e=>{e.stopPropagation();S.editingPinId=p.id;S.activePinId=p.id;S.expandedPinId=p.id;renderFeedback();setTimeout(()=>{const et=$('edit-title-'+p.id);if(et)et.focus();},20);};
@@ -2221,7 +2225,7 @@ function renderFeedback(){
       // title already in titleRow above
       if(p.txt){const txtEl=mk('div','fc-txt',p.txt);body.appendChild(txtEl);}
       if(p.tags.length){const tg=mk('div','fc-tags');p.tags.forEach(t=>{const tb=mk('span','fc-tag',t);const isHiPri=t==='high-priority';tb.style.cssText='background:#f4f4f5;border-color:#d1d5db;color:#374151;'+(isHiPri?'border-width:2px;font-weight:700;':'');tg.appendChild(tb);});body.appendChild(tg);}
-      if(p.link&&isExp){const lk=mk('a','fc-link','🔗 Reference');lk.href=p.link;lk.target='_blank';body.appendChild(lk);}
+      if(p.link&&isExp){const lk=mk('a','fc-link');lk.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M5.5 7.5a3 3 0 004.2.3l1.7-1.7a3 3 0 00-4.24-4.24L6.1 3\"/><path d=\"M8.5 6.5a3 3 0 00-4.2-.3L2.6 7.9a3 3 0 004.24 4.24L7.9 11\"/></svg> Reference';lk.href=p.link;lk.target='_blank';body.appendChild(lk);}
       const foot=mk('div','fc-foot');
       const vb=mk('button','upbtn'+(p.voted?' voted':''),'▲ '+p.votes);
       if(p.voted){vb.style.background=p.color;vb.style.borderColor=p.color;}
@@ -2243,7 +2247,7 @@ function renderFeedback(){
         rsel.onclick=e=>e.stopPropagation();
         foot.appendChild(rsel);
       }
-      if(p.replies.length){const rc=mk('button','reply-count','💬 '+p.replies.length+' repl'+(p.replies.length===1?'y':'ies')+' ▾');rc.onclick=e=>{e.stopPropagation();activatePin(p.id);};foot.appendChild(rc);}
+      if(p.replies.length){const rc=mk('button','reply-count');rc.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M2 2h10v8H8.5l-1.5 2-1.5-2H2z\"/></svg> '+p.replies.length+' repl'+(p.replies.length===1?'y':'ies')+' ▾';rc.onclick=e=>{e.stopPropagation();activatePin(p.id);};foot.appendChild(rc);}
       body.appendChild(foot);
     }
     main.appendChild(body);card.appendChild(main);
@@ -2431,7 +2435,7 @@ function importUnresolved(){
 }
 function addRmapCol(){
   const id='col'+Date.now();
-  RMAP_CATS.push({id,label:'New Column',emoji:'📌'});
+  RMAP_CATS.push({id,label:'New Column',emoji:''});
   renderRoadmap();
   setTimeout(function(){
     var hdrs=document.querySelectorAll('.rmap-ct[contenteditable]');
@@ -2473,7 +2477,7 @@ function renderTimeline(){
     const lbl=mk('div','tlbl',v.lbl);
     const nm=mk('div','tslbl',v.name);
     it.appendChild(dot);it.appendChild(lbl);it.appendChild(nm);
-    if(S.isAdmin){const rb=mk('span','',` ✎`);rb.style.cssText='font-size:9px;color:var(--muted2);cursor:pointer;';rb.onclick=e=>{e.stopPropagation();openRename('version',v.id);};nm.appendChild(rb);}
+    if(S.isAdmin){const rb=mk('span','');rb.innerHTML='<svg width=\"10\" height=\"10\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><path d=\"M9.5 1.5l3 3L4 13H1V10L9.5 1.5z\"/></svg>';rb.style.cssText='display:inline-flex;align-items:center;margin-left:2px;font-size:9px;color:var(--muted2);cursor:pointer;';rb.onclick=e=>{e.stopPropagation();openRename('version',v.id);};nm.appendChild(rb);}
     it.onclick=()=>pickVer(v.id);
     tl.appendChild(it);
   });
