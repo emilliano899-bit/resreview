@@ -418,16 +418,16 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <div class="main">
 <!-- TOOLBAR -->
 <div class="tbar" id="tbar">
-  <button class="tbtn on" id="tool-sel" onclick="setTool('sel')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 1.5L6 11.5L8 8L11.5 6L1.5 1.5Z"/></svg><div class="tip">Select [S]</div></button>
+  <button class="tbtn on" id="tool-sel" onclick="setTool('sel')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 1.5L6 11.5L8 8L11.5 6L1.5 1.5Z"/></svg><div class="tip">Select</div></button>
   <div class="tdiv"></div>
-  <button class="tbtn" id="tool-cmnt" onclick="setTool('cmnt')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.5 8C11.5 8.8 10.8 9.5 10 9.5H4.8L2.5 11.5V9.5C1.7 9.5 1 8.8 1 8V4C1 3.2 1.7 2.5 2.5 2.5H10C10.8 2.5 11.5 3.2 11.5 4V8Z"/></svg><div class="tip">Comment [C]</div></button>
+  <button class="tbtn" id="tool-cmnt" onclick="setTool('cmnt')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.5 8C11.5 8.8 10.8 9.5 10 9.5H4.8L2.5 11.5V9.5C1.7 9.5 1 8.8 1 8V4C1 3.2 1.7 2.5 2.5 2.5H10C10.8 2.5 11.5 3.2 11.5 4V8Z"/></svg><div class="tip">Comment</div></button>
   <div class="tdiv"></div>
-  <button class="tbtn" id="tool-rect" onclick="setTool('rect')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5"/></svg><div class="tip">Rectangle [R]</div></button>
-  <button class="tbtn" id="tool-ellipse" onclick="setTool('ellipse')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="6.5" cy="6.5" rx="5" ry="3.5"/></svg><div class="tip">Ellipse [E]</div></button>
-  <button class="tbtn" id="tool-arrow" onclick="setTool('arrow')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="2.5" y1="10.5" x2="10.5" y2="2.5"/><path d="M6 2.5H10.5V7"/></svg><div class="tip">Arrow [A]</div></button>
-  <button class="tbtn" id="tool-pencil" onclick="setTool('pencil')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9.5 1.5L11.5 3.5L4 11H1.5V8.5L9.5 1.5Z"/></svg><div class="tip">Pencil [D]</div></button>
-  <button class="tbtn" id="tool-text" onclick="setTool('text')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="6.5" y1="2.5" x2="6.5" y2="10.5"/><line x1="2.5" y1="2.5" x2="10.5" y2="2.5"/></svg><div class="tip">Text [T]</div></button>
-  <button class="tbtn" id="tool-node" onclick="setTool('node')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="4.5" width="4" height="4" rx="1"/><rect x="8" y="1" width="4" height="4" rx="1"/><rect x="8" y="8" width="4" height="4" rx="1"/><line x1="5" y1="6.5" x2="8" y2="3"/><line x1="5" y1="6.5" x2="8" y2="10"/></svg><div class="tip">Node [N]</div></button>
+  <button class="tbtn" id="tool-rect" onclick="setTool('rect')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5"/></svg><div class="tip">Rectangle</div></button>
+  <button class="tbtn" id="tool-ellipse" onclick="setTool('ellipse')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="6.5" cy="6.5" rx="5" ry="3.5"/></svg><div class="tip">Ellipse</div></button>
+  <button class="tbtn" id="tool-arrow" onclick="setTool('arrow')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="2.5" y1="10.5" x2="10.5" y2="2.5"/><path d="M6 2.5H10.5V7"/></svg><div class="tip">Arrow</div></button>
+  <button class="tbtn" id="tool-pencil" onclick="setTool('pencil')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9.5 1.5L11.5 3.5L4 11H1.5V8.5L9.5 1.5Z"/></svg><div class="tip">Pencil</div></button>
+  <button class="tbtn" id="tool-text" onclick="setTool('text')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><line x1="6.5" y1="2.5" x2="6.5" y2="10.5"/><line x1="2.5" y1="2.5" x2="10.5" y2="2.5"/></svg><div class="tip">Text</div></button>
+  <button class="tbtn" id="tool-node" onclick="setTool('node')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="4.5" width="4" height="4" rx="1"/><rect x="8" y="1" width="4" height="4" rx="1"/><rect x="8" y="8" width="4" height="4" rx="1"/><line x1="5" y1="6.5" x2="8" y2="3"/><line x1="5" y1="6.5" x2="8" y2="10"/></svg><div class="tip">Node</div></button>
 </div>
 
 <!-- Style picker (shown when draw tool active) -->
@@ -449,6 +449,9 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="st-opt" data-style="animated" onclick="setStrokeStyle('animated',this)">
       <svg width="28" height="8"><line x1="2" y1="4" x2="26" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 3"/></svg>Flow
     </div>
+  </div>
+  <div id="spick-del" style="display:none;padding-top:4px;border-top:1px solid var(--border);">
+    <button onclick="deleteSelected()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid #fca5a5;background:#fff5f5;color:#ef4444;cursor:pointer;font-size:11px;font-weight:600;font-family:inherit;transition:all .15s;">🗑 Delete</button>
   </div>
 </div>
 
@@ -1179,27 +1182,29 @@ function selEl(el){
   clearSel();S.selEl=el;el.classList.add('ann-sel');
   const resizable=el.classList.contains('a-img')||el.classList.contains('a-rect')||el.classList.contains('a-ellipse');
   const isSvgEl=el.tagName==='line'||el.tagName==='path'||el.tagName==='rect'||el.tagName==='ellipse';
-  if(resizable||isSvgEl){
-    if(resizable)addRH(el); else addSvgHandles(el);
-    const sp=$('spick');if(!sp)return;
-    sp.classList.add('open');
-    const cwr=$('cwrap').getBoundingClientRect();
-    let ex,ey;
-    if(isSvgEl){
-      try{
-        const _bb=el.getBBox();
-        ex=(_bb.x+_bb.width)*S.zoom+S.panX+cwr.left+10;
-        ey=_bb.y*S.zoom+S.panY+cwr.top;
-      }catch(_e2){ex=cwr.left+100;ey=cwr.top+60;}
-    }else{
-      const r=el.getBoundingClientRect();ex=r.right+8;ey=r.top;
-    }
-    const spW=184,spH=180;
-    ex=Math.min(ex,window.innerWidth-spW-8);
-    ey=Math.min(ey,window.innerHeight-spH-8);
-    ey=Math.max(ey,8);
-    sp.style.left=ex+'px';sp.style.top=ey+'px';
+  if(resizable)addRH(el);else if(isSvgEl)addSvgHandles(el);
+  const sp=$('spick');if(!sp)return;
+  const showStylePanel=resizable||isSvgEl;
+  // Show thickness/style controls only for drawable elements; always show delete for owner
+  sp.querySelectorAll('.splbl,.sp-sizes,.sp-styles').forEach(function(x){x.style.display=showStylePanel?'':  'none';});
+  const _sdel=$('spick-del');if(_sdel)_sdel.style.display=canEdit(el)?'block':'none';
+  sp.classList.add('open');
+  const cwr=$('cwrap').getBoundingClientRect();
+  let ex,ey;
+  if(isSvgEl){
+    try{
+      const _bb=el.getBBox();
+      ex=(_bb.x+_bb.width)*S.zoom+S.panX+cwr.left+10;
+      ey=_bb.y*S.zoom+S.panY+cwr.top;
+    }catch(_e2){ex=cwr.left+100;ey=cwr.top+60;}
+  }else{
+    const r=el.getBoundingClientRect();ex=r.right+8;ey=r.top;
   }
+  const spW=184,spH=220;
+  ex=Math.min(ex,window.innerWidth-spW-8);
+  ey=Math.min(ey,window.innerHeight-spH-8);
+  ey=Math.max(ey,8);
+  sp.style.left=ex+'px';sp.style.top=ey+'px';
 }
 function clearSel(){
   S.selEls.forEach(el=>el.classList.remove('ann-sel'));S.selEls=[];
