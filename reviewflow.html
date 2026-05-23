@@ -274,9 +274,10 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 .mention-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;color:#fff;}
 
 /* ── Roadmap ── */
-.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;overflow:auto;}
+.rmap{display:none;position:absolute;inset:0;background:var(--surface);z-index:500;overflow:auto;cursor:default;}
+.rmap.rmap-panning{cursor:grabbing;}
 .rmap.open{display:block;}
-.rmap-inner{padding:28px;}
+.rmap-inner{padding:28px;min-width:max-content;}
 .rmap-h{font-size:18px;font-weight:700;margin-bottom:3px;}
 .rmap-s{font-size:12px;color:var(--muted);margin-bottom:22px;}
 .rmap-cols{display:flex;flex-direction:row;gap:12px;min-width:max-content;}
@@ -420,7 +421,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <div class="tbar" id="tbar">
   <button class="tbtn on" id="tool-sel" onclick="setTool('sel')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 1.5L6 11.5L8 8L11.5 6L1.5 1.5Z"/></svg><div class="tip">Select</div></button>
   <div class="tdiv"></div>
-  <button class="tbtn" id="tool-cmnt" onclick="setTool('cmnt')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M11.5 8C11.5 8.8 10.8 9.5 10 9.5H4.8L2.5 11.5V9.5C1.7 9.5 1 8.8 1 8V4C1 3.2 1.7 2.5 2.5 2.5H10C10.8 2.5 11.5 3.2 11.5 4V8Z"/></svg><div class="tip">Comment</div></button>
+  <button class="tbtn" id="tool-cmnt" onclick="setTool('cmnt')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6.5 11.5C6.5 11.5 2 7.2 2 4.8C2 2.7 4.02 1 6.5 1C8.98 1 11 2.7 11 4.8C11 7.2 6.5 11.5 6.5 11.5Z"/><circle cx="6.5" cy="4.8" r="1.3" fill="currentColor" stroke="none"/></svg><div class="tip">Pin</div></button>
   <div class="tdiv"></div>
   <button class="tbtn" id="tool-rect" onclick="setTool('rect')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5"/></svg><div class="tip">Rectangle</div></button>
   <button class="tbtn" id="tool-ellipse" onclick="setTool('ellipse')"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="6.5" cy="6.5" rx="5" ry="3.5"/></svg><div class="tip">Ellipse</div></button>
@@ -722,11 +723,12 @@ const S={
   user:{id:'u1',name:'User 1',av:'U1',color:COLORS[0]},
   isAdmin:true,
   sessions:[
-    {id:'s1',name:'Sprint 8 Review',userId:'u1'},
-    {id:'s2',name:'QA Pass Feb',userId:'u2'},
-    {id:'s3',name:'Accessibility Audit',userId:'u3'},
-    {id:'s4',name:'Mobile Focus',userId:'u1'},
+    {id:'s1',name:'Sprint 8 Review',userId:'u1',num:1},
+    {id:'s2',name:'QA Pass Feb',userId:'u2',num:2},
+    {id:'s3',name:'Accessibility Audit',userId:'u3',num:3},
+    {id:'s4',name:'Mobile Focus',userId:'u1',num:4},
   ],
+  nextSessNum:5,
   activeSessionId:'s1',
   viewMode:'full',focusSessId:null,
   tool:'sel',strokeW:2,strokeStyle:'solid',
@@ -799,11 +801,30 @@ function applyRemote(data){
 function startFirebaseSync(){}
 
 /* ── INIT ── */
+function initRmapPan(){
+  var rm=$('rmap');if(!rm)return;
+  var _down=false,_sx=0,_sy=0,_sl=0,_st=0;
+  rm.addEventListener('mousedown',function(e){
+    if(e.target.closest('.rmap-item,.rmap-col-hdr,.rmap-resolve-btn,.rmap-reply-toggle,.rmap-assign-btn,button,input,textarea,a'))return;
+    if(e.button!==0)return;
+    _down=true;_sx=e.clientX;_sy=e.clientY;_sl=rm.scrollLeft;_st=rm.scrollTop;
+    rm.classList.add('rmap-panning');e.preventDefault();
+  });
+  document.addEventListener('mousemove',function(e){
+    if(!_down)return;
+    rm.scrollLeft=_sl-(_sx-e.clientX)*1.1;
+    rm.scrollTop=_st-(_sy-e.clientY)*1.1;
+  });
+  document.addEventListener('mouseup',function(){
+    if(_down){_down=false;rm.classList.remove('rmap-panning');}
+  });
+}
 function init(){
   updateChip();
   $('admin-btn').classList.add('lit');
   setTool('sel');
   setupEvents();
+  initRmapPan();
   setTimeout(fitScreen,50);
   loadPins();
   renderProductDrop();
@@ -1045,7 +1066,7 @@ function renderSessDrop(){
 function confirmNewSession(){
   const nm=($('sess-name-in').value||'').trim();if(!nm){toast('Enter session name');return;}
   const id='s'+Date.now();
-  S.sessions.push({id,name:nm,userId:S.user.id});
+  S.sessions.push({id,name:nm,userId:S.user.id,num:S.nextSessNum++});
   S.activeSessionId=id;closeModal('sess-modal');updateChip();renderSessDrop();
   toast('Session "'+nm+'" started — click canvas to add comments');
 }
@@ -1843,18 +1864,67 @@ function loadPins(){
 function startPin(pt){
   if(!S.activeSessionId){toast('Start a session first — click your name ↑');return;}
   S.pendingPin=pt;S.pendingTags=[];
-  renderFeedback();
+  renderPins();
+  showPinInline(pt);
 }
-function cancelPin(){S.pendingPin=null;S.pendingTags=[];renderFeedback();}
+function showPinInline(pt){
+  removePinInline();
+  var cw=$('cwrap');
+  var sx=S.panX+pt.x*S.zoom;
+  var sy=S.panY+pt.y*S.zoom;
+  var cwr=cw.getBoundingClientRect();
+  var bw=240,bh=130;
+  var bx=sx+30,by=sy-10;
+  if(bx+bw>cwr.width-8)bx=sx-bw-10;
+  if(by+bh>cwr.height-8)by=cwr.height-bh-8;
+  if(by<4)by=4;
+  var wrap=document.createElement('div');
+  wrap.id='pin-inline';
+  wrap.style.cssText='position:absolute;left:'+bx+'px;top:'+by+'px;z-index:400;background:var(--surface);border:1.5px solid '+S.user.color+';border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:10px 12px;width:'+bw+'px;';
+  var sess=S.sessions.find(function(s){return s.id===S.activeSessionId;});
+  var lbl=document.createElement('div');
+  lbl.style.cssText='font-size:10px;font-weight:700;color:'+S.user.color+';margin-bottom:6px;';
+  lbl.textContent='Session '+(sess?sess.num:'')+( sess?' · '+sess.name:'');
+  wrap.appendChild(lbl);
+  var ti=document.createElement('input');
+  ti.id='pin-inline-title';ti.className='mi';ti.placeholder='What did you find?';
+  ti.style.cssText='width:100%;font-size:12px;font-weight:600;margin-bottom:6px;box-sizing:border-box;';
+  ti.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();confirmPin();}
+    if(e.key==='Escape'){e.preventDefault();cancelPin();}
+    e.stopPropagation();
+  });
+  wrap.appendChild(ti);
+  var ta=document.createElement('textarea');
+  ta.id='pin-inline-body';ta.className='mta';ta.placeholder='Description (optional)…';
+  ta.style.cssText='width:100%;font-size:11px;min-height:36px;resize:none;margin-bottom:6px;box-sizing:border-box;';
+  ta.addEventListener('keydown',function(e){e.stopPropagation();});
+  wrap.appendChild(ta);
+  var row=document.createElement('div');
+  row.style.cssText='display:flex;gap:5px;justify-content:flex-end;';
+  var cBtn=document.createElement('button');cBtn.className='mbtn';cBtn.textContent='Cancel';cBtn.onclick=cancelPin;
+  var aBtn=document.createElement('button');aBtn.className='mbtn pri';aBtn.textContent='Add ↑';
+  aBtn.style.cssText='background:'+S.user.color+';border-color:'+S.user.color+';';
+  aBtn.onclick=confirmPin;
+  row.appendChild(cBtn);row.appendChild(aBtn);wrap.appendChild(row);
+  cw.appendChild(wrap);
+  setTimeout(function(){ti.focus();},30);
+}
+function removePinInline(){var el=document.getElementById('pin-inline');if(el)el.remove();}
+function cancelPin(){S.pendingPin=null;S.pendingTags=[];removePinInline();renderPins();renderFeedback();}
 function confirmPin(){
-  const title=($('draft-title')?.value||'').trim();if(!title){toast('Add a title');return;}
+  var ti=document.getElementById('pin-inline-title')||$('draft-title');
+  var ta=document.getElementById('pin-inline-body')||$('draft-body');
+  var title=(ti?ti.value:'').trim();if(!title){if(ti)ti.focus();toast('Add a title');return;}
   if(!S.pendingPin){toast('Click the canvas first');return;}
-  const ci=COLORS.indexOf(S.user.color);
-  S.pins.push(mkPin('p'+Date.now(),S.nextNum++,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
+  var ci=COLORS.indexOf(S.user.color);
+  var sess=S.sessions.find(function(s){return s.id===S.activeSessionId;});
+  var sessNum=sess?sess.num:S.nextSessNum;
+  S.pins.push(mkPin('p'+Date.now(),sessNum,S.pendingPin.x,S.pendingPin.y,ci<0?0:ci,
     S.user.name,S.user.av,S.user.id,S.activeSessionId,title,
-    ($('draft-body')?.value||'').trim(),dc(S.pendingTags),0,
-    new Date().toISOString().slice(0,10),false,'planned',($('draft-link')?.value||'').trim()));
-  S.pendingPin=null;S.pendingTags=[];renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
+    (ta?ta.value:'').trim(),dc(S.pendingTags),0,
+    new Date().toISOString().slice(0,10),false,'planned',''));
+  S.pendingPin=null;S.pendingTags=[];removePinInline();renderPins();renderFeedback();renderRoadmap();updateStats();toast('Comment added');scheduleSync();
 }
 function buildTagPicker(){
   const c=$('tag-pick-wrap');if(!c)return;c.innerHTML='';
@@ -1879,21 +1949,36 @@ function buildRmapCatGrid(){
   });
 }
 function renderPins(){
-  const cont=$('pins');if(!cont)return;cont.innerHTML='';
-  S.pins.forEach(p=>{
-    const wrap=mk('div','pin-wrap');wrap.style.cssText=`position:absolute;left:${p.x}px;top:${p.y}px;`;
-    const pin=mk('div','pin'+(p.id===S.activePinId?' active':''));
-    pin.style.cssText=`background:${p.color};border-color:${p.color};`;
+  var cont=$('pins');if(!cont)return;cont.innerHTML='';
+  var actP=S.pins.find(function(p){return p.id===S.activePinId;});
+  var actSessId=actP?actP.sessId:null;
+  S.pins.forEach(function(p){
+    var isAct=p.id===S.activePinId;
+    var isPeer=!isAct&&actSessId&&p.sessId===actSessId;
+    var wrap=mk('div','pin-wrap');wrap.style.cssText='position:absolute;left:'+p.x+'px;top:'+p.y+'px;';
+    var pin=mk('div','pin'+(isAct?' active':isPeer?' sess-peer':''));
+    pin.style.cssText='background:'+p.color+';border-color:'+p.color+';';
+    if(isPeer)pin.style.boxShadow='0 0 0 2px #fff,0 0 0 4px '+p.color;
     wrap.dataset.sessId=p.sessId;wrap.dataset.userId=p.userId;
-    pin.innerHTML=`<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">${p.num}</span>`;
-    const sess=S.sessions.find(s=>s.id===p.sessId);
-    const lbl=mk('div','pin-label');
-    const _slbl=p.auth+(sess?' · '+sess.name:'');lbl.title=(p.title||p.auth)+' — '+_slbl;lbl.innerHTML='<span class="pin-label-txt">'+(p.title||p.auth)+'</span><span class="pin-label-sess">'+_slbl+'</span>';
+    pin.innerHTML='<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">'+p.num+'</span>';
+    var sess=S.sessions.find(function(s){return s.id===p.sessId;});
+    var lbl=mk('div','pin-label');
+    var sessLbl=sess?'Session '+sess.num+' · '+sess.name:'';
+    lbl.title=(p.title||p.auth)+(sessLbl?' — '+sessLbl:'');
+    lbl.innerHTML='<span class="pin-label-txt">'+(p.title||p.auth)+'</span><span class="pin-label-sess">'+sessLbl+'</span>';
     wrap.appendChild(pin);wrap.appendChild(lbl);
-    pin.addEventListener('click',e=>{e.stopPropagation();activatePinFromCanvas(p.id);});
-    makeDraggable(wrap,()=>{p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
+    pin.addEventListener('click',function(e){e.stopPropagation();activatePinFromCanvas(p.id);});
+    makeDraggable(wrap,function(){p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
     cont.appendChild(wrap);
   });
+  if(S.pendingPin){
+    var sess2=S.sessions.find(function(s){return s.id===S.activeSessionId;});
+    var num=sess2?sess2.num:'?';
+    var wrap2=mk('div','pin-wrap');wrap2.style.cssText='position:absolute;left:'+S.pendingPin.x+'px;top:'+S.pendingPin.y+'px;pointer-events:none;opacity:0.85;';
+    var pin2=mk('div','pin');pin2.style.cssText='background:'+S.user.color+';border-color:'+S.user.color+';';
+    pin2.innerHTML='<span style="transform:rotate(45deg);display:block;font-size:9px;font-weight:800;color:#fff;line-height:1">'+num+'</span>';
+    wrap2.appendChild(pin2);cont.appendChild(wrap2);
+  }
 }
 function activatePin(id){
   const wasOpen=S.activePinId===id&&S.expandedPinId===id;
@@ -2022,8 +2107,15 @@ function renderFeedback(){
     const pinDot=mk('div','fc-pin',p.num);pinDot.style.background=p.color;
     const body=mk('div','fc-body');
     const sess=S.sessions.find(s=>s.id===p.sessId);
+    if(sess){
+      const sbadge=mk('div','');
+      sbadge.style.cssText='display:inline-flex;align-items:center;gap:4px;margin-bottom:4px;font-size:9px;font-weight:700;color:'+p.color+';background:'+p.color+'18;border-radius:5px;padding:1px 6px;cursor:pointer;';
+      sbadge.innerHTML='<svg width="8" height="8" viewBox="0 0 13 13" fill="'+p.color+'" stroke="none"><path d="M6.5 12C6.5 12 2 7.2 2 4.8C2 2.7 4.02 1 6.5 1C8.98 1 11 2.7 11 4.8C11 7.2 6.5 12 6.5 12Z"/><circle cx="6.5" cy="4.8" r="1.4" fill="#fff"/></svg>Session '+sess.num+' · '+sess.name;
+      sbadge.onclick=function(e){e.stopPropagation();highlightSess(p.sessId);};
+      body.appendChild(sbadge);
+    }
     const meta=mk('div','fc-meta');
-    meta.innerHTML='<div class="fc-av" style="background:'+p.color+'">'+p.av+'</div><span class="fc-name">'+p.auth+'</span>'+(sess?'<span class="fc-sess">'+sess.name+'</span>':'')+'<span class="fc-time">'+p.time+'</span>';
+    meta.innerHTML='<div class="fc-av" style="background:'+p.color+'">'+p.av+'</div><span class="fc-name">'+p.auth+'</span><span class="fc-time">'+p.time+'</span>';
     if(isOwn&&!isEditing){
       const eb=mk('span','');eb.textContent='✎';eb.title='Edit comment';
       eb.style.cssText='cursor:pointer;font-size:12px;color:var(--muted2);margin-left:auto;padding:1px 5px;border-radius:3px;transition:color .12s;';
