@@ -803,6 +803,15 @@ function init(){
 }
 
 /* ── USER CHIP ── */
+function confirmUser(){
+  const nm=($('user-name-in').value||'').trim();
+  if(!nm){toast('Enter your name');return;}
+  S.user.name=nm;
+  S.user.av=nm.slice(0,2).toUpperCase();
+  closeModal('user-modal');
+  updateChip();
+  toast('Welcome, '+nm+'!');
+}
 function updateChip(){
   const ch=$('user-chip');
   ch.style.background=S.user.color;
