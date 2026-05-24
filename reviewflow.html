@@ -391,6 +391,12 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 /* Toast */
 .toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;font-size:11px;padding:8px 16px;border-radius:7px;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.22);white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.blocked-badge{position:fixed;top:14px;right:18px;z-index:900;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
+.blocked-dot{width:14px;height:14px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25);flex-shrink:0;transition:transform .15s;}
+.blocked-dot.off{background:#d1d5db;box-shadow:none;}
+.blocked-badge:hover .blocked-dot{transform:scale(1.2);}
+.blocked-lbl{font-size:11px;font-weight:700;color:#ef4444;letter-spacing:.03em;}
+.blocked-lbl.off{color:var(--muted);}
 </style>
 </head>
 <body>
@@ -517,7 +523,12 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="zbtn" onclick="fitScreen()" title="Fit [F]"><svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 4.5V1.5H4.5"/><path d="M8.5 1.5H11.5V4.5"/><path d="M11.5 8.5V11.5H8.5"/><path d="M4.5 11.5H1.5V8.5"/></svg></div>
     <div class="zbtn" onclick="zoomBy(-.12)" title="Zoom out">−</div>
   </div>
-  <!-- Context menu -->
+  <!-- Blocked status badge -->
+<div class="blocked-badge" id="blocked-badge" onclick="toggleBlocked()" title="Toggle blocked status">
+  <div class="blocked-dot off" id="blocked-dot"></div>
+  <span class="blocked-lbl off" id="blocked-lbl">Blocked</span>
+</div>
+<!-- Context menu -->
   <div class="ctx-menu" id="ctx-menu"></div>
   <!-- Roadmap overlay (within canvas area) -->
   <div class="rmap" id="rmap">
@@ -550,6 +561,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
       <option value="status">Status</option>
     </select>
   </div>
+  <div style="padding:6px 13px 0;"><input id="f-search" type="text" placeholder="Search comments…" oninput="renderFeedback()" style="width:100%;box-sizing:border-box;font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;outline:none;"></div>
   <div class="ftags" id="tag-filters"></div>
   <div class="flist" id="flist"></div>
 </div>
@@ -664,6 +676,20 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   </div>
 </div>
 <!-- Add to Roadmap -->
+<div class="mover" id="del-col-modal">
+  <div class="modal">
+    <div class="mtit">Delete Column</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;" id="del-col-msg"></div>
+    <div class="mf" id="del-col-reassign-wrap">
+      <div class="ml">Move tickets to</div>
+      <select class="mi" id="del-col-target"></select>
+    </div>
+    <div class="mact">
+      <button class="mbtn" onclick="closeModal('del-col-modal')">Cancel</button>
+      <button class="mbtn pri" id="del-col-confirm-btn" onclick="confirmDeleteRmapCol()" style="background:#ef4444;border-color:#ef4444;">Delete Column</button>
+    </div>
+  </div>
+</div>
 <div class="mover" id="rtm-modal">
   <div class="modal wide">
     <div class="mtit">Add to Roadmap</div>
@@ -818,7 +844,7 @@ const S={
   ],
   activeProductId:'prod1',curVer:'v1.1',
   pins:[],nextNum:1,
-  pendingPin:null,pendingPinId:null,pendingTags:[],roadmapPins:[],
+  pendingPin:null,pendingPinId:null,pendingTags:[],roadmapPins:[],undoStack:[],
   activePinId:null,expandedPinId:null,
   pendingImgUrl:null,pendingImgOwn:'me',pastedPt:null,
   sortMode:'votes',activeTag:null,
@@ -890,12 +916,41 @@ function initRmapPan(){
     if(_down){_down=false;rm.classList.remove('rmap-panning');}
   });
 }
+var _rmapDrag=null,_rmapDragEl=null,_rmapGhost=null;
 function init(){
   updateChip();
   $('admin-btn').classList.add('lit');
   setTool('sel');
   setupEvents();
   initRmapPan();
+  // Roadmap drag-drop: global listeners (added once, not per-render)
+  document.addEventListener('mousemove',function(e){
+    if(!_rmapDrag||!_rmapGhost)return;
+    _rmapGhost.style.left=(e.clientX-40)+'px';
+    _rmapGhost.style.top=(e.clientY-20)+'px';
+    var body=$('rmap-body');if(!body)return;
+    body.querySelectorAll('.rmap-body[data-cat]').forEach(function(col){
+      var r=col.getBoundingClientRect();
+      var over=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      col.style.outline=over?'2px dashed #818cf8':'';
+    });
+  });
+  document.addEventListener('mouseup',function(e){
+    if(!_rmapDrag)return;
+    var body=$('rmap-body');
+    if(body){
+      body.querySelectorAll('.rmap-body[data-cat]').forEach(function(col){
+        col.style.outline='';
+        var r=col.getBoundingClientRect();
+        if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+          moveRmapItem(_rmapDrag,col.dataset.cat);
+        }
+      });
+    }
+    if(_rmapDragEl)_rmapDragEl.style.opacity='';
+    if(_rmapGhost)_rmapGhost.remove();
+    _rmapDrag=null;_rmapDragEl=null;_rmapGhost=null;
+  });
   setTimeout(fitScreen,50);
   loadPins();
   // Initialize global roadmap from all SEED versions
@@ -1018,6 +1073,7 @@ function switchProduct(pid){
   if(cur)pickVer(cur.id);else{S.curVer='';renderProductDrop();renderTimeline();}
 }
 function pickVer(vid){
+  if(S.curVer)SEED[S.curVer]=dc(S.pins); // persist current pins before switching
   S.curVer=vid;loadPins();applyVerImg();renderTimeline();renderProductDrop();
   const v=S.versions.find(x=>x.id===vid);if(v)toast(v.lbl+' — '+v.name);
 }
@@ -1258,7 +1314,20 @@ function applyStroke(el,color,w,style){
 }
 
 /* ── ANNOTATIONS ── */
-function annTag(el){el.dataset.userId=S.user.id;el.dataset.sessId=S.activeSessionId||'';el.dataset.verId=S.curVer||'';el.dataset.pinId=S.pendingPinId||S.activePinId||'';}
+function undoLast(){
+  if(!S.undoStack||!S.undoStack.length){toast('Nothing to undo');return;}
+  var entry=S.undoStack.pop();
+  if(entry&&entry.el){try{clearSel();entry.el.remove();}catch(ex){}}
+}
+function pushUndo(el){
+  if(!S.undoStack)S.undoStack=[];
+  // Schedule push after element is appended to DOM
+  requestAnimationFrame(function(){
+    if(el.parentNode)S.undoStack.push({el:el});
+    if(S.undoStack.length>50)S.undoStack.shift();
+  });
+}
+function annTag(el){el.dataset.userId=S.user.id;el.dataset.sessId=S.activeSessionId||'';el.dataset.verId=S.curVer||'';el.dataset.pinId=S.pendingPinId||S.activePinId||'';pushUndo(el);}
 function annClick(el){
   if(el.tagName==='line'||el.tagName==='path'||el.tagName==='rect'||el.tagName==='ellipse')el.setAttribute('pointer-events','stroke');
   el.addEventListener('click',e=>{
@@ -1798,8 +1867,12 @@ function setupEvents(){
   document.addEventListener('mouseup',onUp);
   document.addEventListener('keydown',e=>{
     if(e.target.matches('input,textarea,[contenteditable]'))return;
-    if(e.key==='Escape'){clearSel();S.focusSessId=null;applyVis();closeCtxMenu();}
+    if(e.key==='Escape'){
+      if(S.pendingPin){cancelPin();} // cancel ghost pin but keep draft panel open
+      else{clearSel();S.focusSessId=null;applyVis();closeCtxMenu();}
+    }
     if((e.key==='Delete'||e.key==='Backspace')&&(S.selEl||S.selEls.length>0)){e.preventDefault();deleteSelected();}
+    if(e.ctrlKey&&e.key==='z'){e.preventDefault();undoLast();}
   });
   document.addEventListener('paste',e=>{
     const items=e.clipboardData?.items||[];
@@ -2008,7 +2081,17 @@ function startPin(pt){
   S.pendingPin=pt;S.pendingPinId='p'+Date.now();S.pendingTags=[];
   renderPins();renderFeedback();
 }
-function cancelPin(){S.pendingPin=null;S.pendingPinId=null;S.pendingTags=[];renderPins();renderFeedback();}
+function cancelPin(){
+  // Save draft text before cancel so user doesn't lose it
+  var dt=$('draft-title'),db=$('draft-body');
+  var savedTitle=dt?dt.value:'',savedBody=db?db.value:'';
+  S.pendingPin=null;S.pendingPinId=null;S.pendingTags=[];
+  renderPins();renderFeedback();
+  // Restore draft text after re-render
+  var dt2=$('draft-title'),db2=$('draft-body');
+  if(dt2&&savedTitle)dt2.value=savedTitle;
+  if(db2&&savedBody)db2.value=savedBody;
+}
 function confirmPin(){
   const title=($('draft-title')?.value||'').trim();if(!title){toast('Add a title');return;}
   if(!S.pendingPin){toast('Click the canvas first');return;}
@@ -2109,6 +2192,8 @@ function sortBy(mode){S.sortMode=mode;renderFeedback();}
 function sortedPins(){
   let ps=[...S.pins];
   if(S.activeTag)ps=ps.filter(p=>p.tags.includes(S.activeTag));
+  const q=(($('f-search')||{}).value||'').trim().toLowerCase();
+  if(q)ps=ps.filter(p=>(p.title||'').toLowerCase().includes(q)||(p.txt||'').toLowerCase().includes(q));
   return ps.sort((a,b)=>S.sortMode==='newest'?b.time.localeCompare(a.time):b.votes-a.votes);
 }
 function renderTagFilters(){
@@ -2415,48 +2500,23 @@ function renderRoadmap(){
     });
   }catch(e){console.warn('reply-toggle',e);}
   try{
-    var _drag=null,_dragEl=null,_ghost=null;
     body.querySelectorAll('.rmap-item[data-id]').forEach(function(item){
       var pid=item.dataset.id;
-      var p=S.pins.find(function(x){return x.id===pid;})||S.roadmapPins&&S.roadmapPins.find(function(x){return x.id===pid;});
+      var p=rmapPin(pid);
       var canDrag=S.isAdmin||(p&&p.userId===S.user.id);
       if(!canDrag)return;
       item.style.cursor='grab';
       item.addEventListener('mousedown',function(e){
         if(e.button!==0)return;
         if(e.target.closest('button,input,textarea,select,a,[contenteditable]'))return;
-        _drag=pid;_dragEl=item;
+        _rmapDrag=pid;_rmapDragEl=item;
         var r=item.getBoundingClientRect();
-        _ghost=item.cloneNode(true);
-        _ghost.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;opacity:0.7;pointer-events:none;z-index:9999;background:var(--surface);border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.18);';
-        document.body.appendChild(_ghost);
+        _rmapGhost=item.cloneNode(true);
+        _rmapGhost.style.cssText='position:fixed;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;opacity:0.7;pointer-events:none;z-index:9999;background:var(--surface);border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.18);';
+        document.body.appendChild(_rmapGhost);
         item.style.opacity='0.35';
         e.preventDefault();
       });
-    });
-    document.addEventListener('mousemove',function(e){
-      if(!_drag||!_ghost)return;
-      _ghost.style.left=(e.clientX-40)+'px';
-      _ghost.style.top=(e.clientY-20)+'px';
-      // highlight target column
-      body.querySelectorAll('.rmap-body[data-cat]').forEach(function(col){
-        var r=col.getBoundingClientRect();
-        var over=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
-        col.style.outline=over?'2px dashed #818cf8':'';
-      });
-    });
-    document.addEventListener('mouseup',function(e){
-      if(!_drag)return;
-      body.querySelectorAll('.rmap-body[data-cat]').forEach(function(col){
-        col.style.outline='';
-        var r=col.getBoundingClientRect();
-        if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
-          moveRmapItem(_drag,col.dataset.cat);
-        }
-      });
-      if(_dragEl)_dragEl.style.opacity='';
-      if(_ghost)_ghost.remove();
-      _drag=null;_dragEl=null;_ghost=null;
     });
   }catch(e){console.warn('drag-drop',e);}
 }
@@ -2511,10 +2571,25 @@ function addRmapCol(){
 }
 function deleteRmapCol(catId){
   if(RMAP_CATS.length<=1){toast("Can't delete last column");return;}
+  S._delColId=catId;
+  var cat=RMAP_CATS.find(function(c){return c.id===catId;});
+  var others=RMAP_CATS.filter(function(c){return c.id!==catId;});
+  var allPins=(S.roadmapPins&&S.roadmapPins.length?S.roadmapPins:S.pins.filter(p=>p.roadmap));
+  var count=allPins.filter(function(p){return p.rmap_cat===catId;}).length;
+  var msg=$('del-col-msg');var wrap=$('del-col-reassign-wrap');var sel=$('del-col-target');
+  if(msg)msg.textContent='Delete column "'+(cat?cat.label:catId)+'"?'+(count?' It has '+count+' ticket'+(count!==1?'s':'')+' that will be moved to another column.':'');
+  if(sel){sel.innerHTML=others.map(function(c){return '<option value="'+c.id+'">'+c.label+'</option>';}).join('');}
+  if(wrap)wrap.style.display=count?'':'none';
+  openModal('del-col-modal');
+}
+function confirmDeleteRmapCol(){
+  var catId=S._delColId;if(!catId)return;
+  if(RMAP_CATS.length<=1){toast("Can't delete last column");closeModal('del-col-modal');return;}
+  var sel=$('del-col-target');var targetId=sel?sel.value:(RMAP_CATS.find(function(c){return c.id!==catId;})||{}).id;
   RMAP_CATS=RMAP_CATS.filter(function(c){return c.id!==catId;});
-  S.pins.forEach(function(p){if(p.rmap_cat===catId)p.rmap_cat=RMAP_CATS[0].id;});
-  if(S.roadmapPins)S.roadmapPins.forEach(function(p){if(p.rmap_cat===catId)p.rmap_cat=RMAP_CATS[0].id;});
-  renderRoadmap();renderFeedback();
+  S.pins.forEach(function(p){if(p.rmap_cat===catId)p.rmap_cat=targetId;});
+  if(S.roadmapPins)S.roadmapPins.forEach(function(p){if(p.rmap_cat===catId)p.rmap_cat=targetId;});
+  S._delColId=null;closeModal('del-col-modal');renderRoadmap();renderFeedback();scheduleSync();
 }
 function renameRmapCat(catId,newName){
   const n=(newName||'').trim();if(!n)return;
@@ -2561,6 +2636,14 @@ function submitRmapReply(pid){
   renderRoadmap();renderFeedback();scheduleSync();
 }
 function toggleResolved(id){const p=rmapPin(id);if(!p)return;p.resolved=!p.resolved;renderRoadmap();renderFeedback();scheduleSync();}
+var _blocked=false;
+function toggleBlocked(){
+  _blocked=!_blocked;
+  var dot=$('blocked-dot'),lbl=$('blocked-lbl');
+  if(dot){dot.classList.toggle('off',!_blocked);}
+  if(lbl){lbl.classList.toggle('off',!_blocked);lbl.textContent=_blocked?'Blocked':'Blocked';}
+  if(_blocked)toast('Blocked flag set — visible to all reviewers');
+}
 function goToPin(id){
   var rp=rmapPin(id);
   var targetVer=(rp&&rp.verId)?rp.verId:S.curVer;
