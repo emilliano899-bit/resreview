@@ -2447,7 +2447,7 @@ function renderRoadmap(){
         +'</div>':'';
       const resolvedBadge=p.resolved?'<span style="color:#16a34a;font-size:9px;margin-left:5px">✓ Resolved</span>':'';
       const importedBadge=p.importedFrom?'<span style="background:#e5e7eb;color:#6b7280;font-size:9px;padding:1px 6px;border-radius:10px;flex-shrink:0;white-space:nowrap;">from '+p.importedFrom+'</span>':'';
-      html+='<div class="rmap-item" data-id="'+p.id+'" style="border-left:3px solid '+p.color+';cursor:pointer;'+(p.importedFrom?'background:#f8f9fa;':'')+(p.blocked?'outline:2px solid #ef4444;':'')+'">'
+      html+='<div class="rmap-item" data-id="'+p.id+'" style="border-left:3px solid '+p.color+';cursor:pointer;'+(p.importedFrom?'background:#e8e9eb;':'')+(p.blocked?'outline:2px solid #ef4444;':'')+'">'
         // Title row with canvas button on the RIGHT
         +'<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;">'
         +'<div class="rmap-item-title" contenteditable="true" data-pid="'+p.id+'" style="flex:1;outline:none;min-width:0;word-break:break-word;" onblur="rmapSaveTitle(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" onclick="event.stopPropagation()">'+p.title+resolvedBadge+'</div>'
