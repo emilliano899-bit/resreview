@@ -1185,10 +1185,8 @@ function switchProduct(pid){
 }
 function pickVer(vid){
   if(S.curVer)SEED[S.curVer]=dc(S.pins); // persist current pins before switching
-  // Clear canvas layers immediately to prevent flicker
+  // Only clear nodes layer (re-rendered by renderNodes); annots/svg handled by applyVis version isolation
   var nl=$("nodes-layer");if(nl)nl.innerHTML="";
-  var al=$("annots");if(al)al.innerHTML="";
-  var sv=$("ann-svg");if(sv){while(sv.firstChild)sv.removeChild(sv.firstChild);}
   S.curVer=vid;loadPins();applyVerImg();renderTimeline();renderProductDrop();
   const v=S.versions.find(x=>x.id===vid);if(v)toast(v.lbl+' — '+v.name);
 }
@@ -1806,7 +1804,8 @@ function applyVis(){
   const sid=S.focusSessId;
   document.querySelectorAll('.pin-wrap').forEach(el=>{el.style.display='';el.style.opacity='1';});
   document.querySelectorAll('[data-sess-id]:not(.pin-wrap)').forEach(el=>{
-    if(el.dataset.own==='general'){el.style.display='';el.style.opacity='1';return;} // general always visible
+    // General elements (e.g. screenshots) are ALWAYS visible in every mode and version
+    if(el.dataset.own==='general'){el.style.display='';el.style.opacity='1';return;}
     // Version isolation: hide elements belonging to other versions
     if(el.dataset.verId&&el.dataset.verId!==S.curVer){el.style.display='none';el.style.opacity='';return;}
     if(S.viewMode==='session'){
@@ -1870,16 +1869,8 @@ function placeShot(url,own,pt){
   // Corner controls: delete + lock
   const imgCtrl=mk('div','');
   imgCtrl.style.cssText='position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:20;';
-  const delBtn=mk('div','');
-  delBtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
-  delBtn.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><line x1=\"2\" y1=\"3.5\" x2=\"12\" y2=\"3.5\"/><path d=\"M5 3.5V2.5a1 1 0 011-1h2a1 1 0 011 1v1\"/><rect x=\"3\" y=\"3.5\" width=\"8\" height=\"9\" rx=\"1\"/></svg>';delBtn.title='Delete';
-  delBtn.addEventListener('click',e=>{
-    e.stopPropagation();
-    if(el.dataset.locked==='true'&&!S.isAdmin){toast('Unlock first');return;}
-    if(!S.isAdmin&&el.dataset.userId!==S.user.id){toast('Not yours');return;}
-    el.remove();
-  });
-  const lbtn=mk('div','');
+  // Delete is in the spick panel only — no corner delete button
+    const lbtn=mk('div','');
   lbtn.style.cssText='background:rgba(0,0,0,.45);color:#fff;border-radius:4px;padding:2px 5px;cursor:pointer;font-size:11px;user-select:none;line-height:1;';
   lbtn.innerHTML='<svg width=\"11\" height=\"11\" viewBox=\"0 0 14 14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><rect x=\"2.5\" y=\"6\" width=\"9\" height=\"7\" rx=\"1\"/><path d=\"M4.5 6V4.5a2.5 2.5 0 014.5-1.5\"/></svg>';lbtn.title='Lock element';
   lbtn.addEventListener('click',e=>{
@@ -1891,7 +1882,7 @@ function placeShot(url,own,pt){
     el.style.cursor=locked?'move':'default';
     el.style.opacity=locked?'1':'0.85';
   });
-  imgCtrl.appendChild(delBtn);imgCtrl.appendChild(lbtn);el.appendChild(imgCtrl);
+  imgCtrl.appendChild(lbtn);el.appendChild(imgCtrl);
   $('annots').appendChild(el);
 }
 function loadCanvasImage(input){
