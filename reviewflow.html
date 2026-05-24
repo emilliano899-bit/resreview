@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ResReview</title>
+<title>ResDesign</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{--bg:#e8e8e8;--surface:#fff;--border:#e0e0e0;--border2:#c8c8c8;--text:#1a1a1a;--muted:#888;--muted2:#bbb;--hover:#f5f5f5;--sel:#6366f1;}
@@ -424,9 +424,9 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
   <div class="vsep"></div>
   <!-- Product/version picker -->
   <div class="vpick" id="vpick" onclick="toggleProductDrop()">
-    <span class="vpick-prod" id="vpick-prod">RESVR App</span>
+    <span class="vpick-prod" id="vpick-prod">No Product</span>
     <span class="vsep" style="height:12px;margin:0 2px;"></span>
-    <span class="vtag" id="vtag">v1.1</span>
+    <span class="vtag" id="vtag">—</span>
     <span class="vpick-ver" id="vpick-ver">Home Configurator</span>
     <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3L4.5 6L7 3"/></svg>
   </div>
@@ -505,15 +505,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div id="nodes-layer"></div>
     <div class="img-area" id="main-img" style="position:absolute;left:80px;top:60px;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.14);">
         <img id="canvas-img" alt="">
-        <div class="img-ph" id="img-ph">
-          <div class="img-ph-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l9-9 9 9"/><path d="M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg></div>
-          <div class="img-ph-title">Load your screenshot</div>
-          <div class="img-ph-sub">Ctrl+V / ⌘+V to paste<br>or right-click the canvas<br>or choose a file</div>
-          <label class="img-load-btn">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3 4l3-3 3 3"/><path d="M1 9.5h10v1H1z"/></svg>
-            Choose Image<input type="file" accept="image/*" onchange="loadCanvasImage(this)">
-          </label>
-        </div>
+
     </div>
     <div id="pins"></div>
   </div>
@@ -613,7 +605,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <!-- Auth modal (login / register) -->
 <div class="auth-mover" id="auth-modal">
   <div class="auth-box">
-    <div class="auth-logo">ReviewFlow</div>
+    <div class="auth-logo">ResDesign</div>
     <div class="auth-tabs">
       <button class="atab on" id="atab-login" onclick="switchAuthTab('login')">Log in</button>
       <button class="atab" id="atab-register" onclick="switchAuthTab('register')">Register</button>
@@ -772,7 +764,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 
 <script>
 /* ── CONSTANTS ── */
-const COLORS=['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#8b5cf6','#84cc16','#0ea5e9','#d946ef','#fb923c','#e11d48','#7c3aed','#0891b2','#65a30d','#db2777','#059669'];
+const COLORS=['#ef4444','#3b82f6','#22c55e','#f97316','#8b5cf6','#14b8a6','#eab308','#ec4899','#06b6d4','#84cc16','#f43f5e','#6366f1','#10b981','#fb923c','#a21caf','#0284c7','#15803d','#c2410c','#4f46e5','#0f766e'];
 let TAGS=[];
 let RMAP_CATS=[
   {id:'planned',emoji:'',label:'Planned',desc:'Upcoming work'},
@@ -787,22 +779,15 @@ const VER_DOT_COLOR={shipped:'#1a1a1a',cur:'#1a1a1a',planned:'#d1d5db'};
 function mkPin(id,num,x,y,ci,auth,av,userId,sessId,title,txt,tags,votes,time,roadmap,rmap_cat,link,replies){
   return{id,num,x,y,color:COLORS[ci%COLORS.length],auth,av,userId,sessId,title,txt,tags,votes,voted:false,time,resolved:false,roadmap:!!roadmap,rmap_cat:rmap_cat||'planned',link:link||'',replies:replies||[]};
 }
-const SEED={
-'v1.0':[],'v1.1':[],'v1.2':[],'v1.3':[],'web1.0':[],'web1.1':[],
-};
+const SEED={};
 
 /* ── STATE ── */
 const S={
   user:{id:'u1',name:'User 1',av:'U1',color:COLORS[0]},
   isAdmin:true,
-  sessions:[
-    {id:'s1',name:'Sprint 8 Review',userId:'u1',num:1},
-    {id:'s2',name:'QA Pass Feb',userId:'u2',num:2},
-    {id:'s3',name:'Accessibility Audit',userId:'u3',num:3},
-    {id:'s4',name:'Mobile Focus',userId:'u1',num:4},
-  ],
-  nextSessNum:5,
-  activeSessionId:'s1',
+  sessions:[],
+  nextSessNum:1,
+  activeSessionId:null,
   viewMode:'full',focusSessId:null,
   tool:'sel',strokeW:2,strokeStyle:'solid',
   zoom:1,panX:0,panY:0,panning:false,panStart:null,spaceHeld:false,
@@ -812,16 +797,9 @@ const S={
   drawArrow:false,arrowStart:null,tempArrow:null,
   drawFree:false,freePath:null,freePts:[],
   connectFrom:null,connecting:null,connTempLine:null,nodes:[],connections:[],
-  products:[{id:'prod1',name:'RESVR App',icon:''},{id:'prod2',name:'Website',icon:''}],
-  versions:[
-    {id:'v1.0',lbl:'v1.0',status:'shipped',name:'Initial Release',productId:'prod1'},
-    {id:'v1.1',lbl:'v1.1',status:'cur',name:'Home Configurator',productId:'prod1'},
-    {id:'v1.2',lbl:'v1.2',status:'planned',name:'Room Navigator',productId:'prod1'},
-    {id:'v1.3',lbl:'v1.3',status:'planned',name:'PDF Export',productId:'prod1'},
-    {id:'web1.0',lbl:'v1.0',status:'shipped',name:'Landing Page',productId:'prod2'},
-    {id:'web1.1',lbl:'v1.1',status:'cur',name:'Configurator Embed',productId:'prod2'},
-  ],
-  activeProductId:'prod1',curVer:'v1.1',
+  products:[],
+  versions:[],
+  activeProductId:'',curVer:'',
   pins:[],nextNum:1,
   pendingPin:null,pendingPinId:null,pendingTags:[],roadmapPins:[],undoStack:[],
   activePinId:null,expandedPinId:null,
@@ -946,7 +924,7 @@ function init(){
   // Show login on first load
   // Auth: check saved session first
   var _savedAuth=null;
-  try{_savedAuth=JSON.parse(localStorage.getItem('reviewflow_auth')||'null');}catch(e){}
+  try{_savedAuth=JSON.parse(localStorage.getItem('resdesign_auth')||'null');}catch(e){}
   if(_savedAuth&&_savedAuth.id&&_savedAuth.name){
     applyUser(_savedAuth,true);
   }else{
@@ -956,8 +934,8 @@ function init(){
 
 /* ── USER CHIP ── */
 /* ── AUTH ── */
-function rfUsers(){try{return JSON.parse(localStorage.getItem('reviewflow_users')||'[]');}catch(e){return[];}}
-function saveRfUsers(u){localStorage.setItem('reviewflow_users',JSON.stringify(u));}
+function rfUsers(){try{return JSON.parse(localStorage.getItem('resdesign_users')||'[]');}catch(e){return[];}}
+function saveRfUsers(u){localStorage.setItem('resdesign_users',JSON.stringify(u));}
 function openAuthModal(){
   var modal=$('auth-modal');if(!modal)return;
   modal.classList.add('open');
@@ -1005,14 +983,23 @@ function doRegister(){
 function applyUser(u,silent){
   S.user={id:u.id,name:u.name,av:u.av,color:u.color};
   S.isAdmin=!!u.isAdmin;
-  localStorage.setItem('reviewflow_auth',JSON.stringify(u));
+  localStorage.setItem('resdesign_auth',JSON.stringify(u));
   var modal=$('auth-modal');if(modal)modal.classList.remove('open');
   $('admin-btn').classList.toggle('lit',S.isAdmin);
   $('admin-pill').style.display=S.isAdmin?'':'none';
   var sr=$('sett-users-row'),ss=$('sett-users-sep');
   if(sr)sr.style.display=S.isAdmin?'':'none';
   if(ss)ss.style.display=S.isAdmin?'':'none';
-  updateChip();
+  // Auto-join or create a session for this user — you are always in a session
+  var existing=S.sessions.find(function(s){return s.userId===u.id;});
+  if(existing){
+    S.activeSessionId=existing.id;
+  }else{
+    var sid2='sess'+Date.now();
+    S.sessions.push({id:sid2,name:u.name+"'s Session",userId:u.id,num:S.nextSessNum++});
+    S.activeSessionId=sid2;
+  }
+  updateChip();renderSessDrop();
   if(!silent)toast('Welcome, '+u.name+'!');
 }
 function openUsersPanel(){
@@ -1755,8 +1742,8 @@ function applyVis(){
   const sid=S.focusSessId;
   document.querySelectorAll('.pin-wrap').forEach(el=>{el.style.display='';el.style.opacity='1';});
   document.querySelectorAll('[data-sess-id]:not(.pin-wrap)').forEach(el=>{
-    // General elements (e.g. screenshots) are ALWAYS visible in every mode and version
-    if(el.dataset.own==='general'){el.style.display='';el.style.opacity='1';return;}
+    // Screenshots and general elements are ALWAYS visible in every mode and version
+    if(el.classList.contains('a-img')||el.dataset.own==='general'){el.style.display='';el.style.opacity='1';return;}
     // Version isolation: hide elements belonging to other versions
     if(el.dataset.verId&&el.dataset.verId!==S.curVer){el.style.display='none';el.style.opacity='';return;}
     if(S.viewMode==='session'){
@@ -1778,7 +1765,8 @@ function applyVis(){
       cl.style.opacity=(!sid||(fn&&fn.sessId===sid)||(tn&&tn.sessId===sid))?'1':'0.38';
     });
   }
-  if((S.viewMode==='session'||S.viewMode==='comment')&&!sid&&S.viewMode==='session'){ann.style.display='none';svg.style.display='none';nl.style.display='none';}
+  // Never hide the whole container — screenshots and general elements inside must stay visible.
+  // Individual element loop above already handles per-element visibility.
   /* Hide conn-lines where either endpoint node is hidden */
   if(S.viewMode==='session'){
     document.querySelectorAll('.conn-line').forEach(function(cl){
@@ -2138,7 +2126,7 @@ function loadPins(){
   applyVerImg();renderPins();renderFeedback();renderRoadmap();updateStats();applyVis();
 }
 function startPin(pt){
-  if(!S.activeSessionId){toast('Start a session first — click your name ↑');return;}
+  if(!S.activeSessionId){var _sid='sess'+Date.now();S.sessions.push({id:_sid,name:S.user.name+"'s Session",userId:S.user.id,num:S.nextSessNum++});S.activeSessionId=_sid;updateChip();renderSessDrop();}
   S.pendingPin=pt;S.pendingPinId='p'+Date.now();S.pendingTags=[];
   renderPins();renderFeedback();
 }
@@ -2514,9 +2502,10 @@ function renderRoadmap(){
       ).join('')+'</div>':'';
       // Category reassign dropdown for admin
       const catOpts=RMAP_CATS.map(c=>'<option value="'+c.id+'"'+(p.rmap_cat===c.id?' selected':'')+'>'+c.label+'</option>').join('');
-      const adminControls=S.isAdmin?
+      const canManage=S.isAdmin||p.userId===S.user.id;
+      const adminControls=canManage?
         '<div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;align-items:center;">'
-        +'<select class="asel" onclick="event.stopPropagation()" onchange="event.stopPropagation();moveRmapItem(\''+p.id+'\',this.value)">'+catOpts+'</select>'
+        +(S.isAdmin?'<select class="asel" onclick="event.stopPropagation()" onchange="event.stopPropagation();moveRmapItem(\''+p.id+'\',this.value)">'+catOpts+'</select>':'')
         +'<button class="rmap-resolve-btn'+(p.resolved?' on':'')+'" onclick="event.stopPropagation();toggleResolved(\''+p.id+'\')">'+(p.resolved?'Unresolve':'Resolve')+'</button>'
         +'</div>':'';
       const resolvedBadge=p.resolved?'<span style="color:#16a34a;font-size:9px;margin-left:5px">✓ Resolved</span>':'';
