@@ -391,13 +391,14 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 /* Toast */
 .toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;font-size:11px;padding:8px 16px;border-radius:7px;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.22);white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.auth-mover{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:none;align-items:center;justify-content:center;}
+.auth-mover{position:fixed;inset:0;background:#f4f5f7;z-index:9999;display:none;align-items:center;justify-content:center;}
 .auth-mover.open{display:flex;}
-.auth-box{width:360px;padding:32px 32px 24px;border-radius:16px;background:var(--surface);box-shadow:0 20px 60px rgba(0,0,0,.22);}
-.auth-logo{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:24px;color:var(--text);}
-.auth-tabs{display:flex;gap:0;margin-bottom:22px;border-bottom:2px solid var(--border);}
-.atab{background:none;border:none;font-size:14px;font-weight:600;padding:8px 18px 10px;cursor:pointer;color:var(--muted);font-family:inherit;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s;}
-.atab.on{color:var(--text);border-bottom-color:var(--text);}
+.auth-box{width:400px;padding:44px 40px 36px;border-radius:20px;background:#fff;box-shadow:0 8px 48px rgba(0,0,0,.10);}
+.auth-logo{font-size:26px;font-weight:900;letter-spacing:-.8px;margin-bottom:8px;color:#111;}
+.auth-logo-sub{font-size:13px;color:#888;margin-bottom:32px;font-weight:400;}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid #eee;}
+.atab{background:none;border:none;font-size:14px;font-weight:600;padding:9px 20px 11px;cursor:pointer;color:#aaa;font-family:inherit;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s;}
+.atab.on{color:#111;border-bottom-color:#111;}
 .auth-err{color:#ef4444;font-size:12px;margin-bottom:10px;min-height:16px;}
 .users-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
 .users-row:last-child{border-bottom:none;}
@@ -606,6 +607,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <div class="auth-mover" id="auth-modal">
   <div class="auth-box">
     <div class="auth-logo">ResDesign</div>
+    <div class="auth-logo-sub">Collaborative UX Review</div>
     <div class="auth-tabs">
       <button class="atab on" id="atab-login" onclick="switchAuthTab('login')">Log in</button>
       <button class="atab" id="atab-register" onclick="switchAuthTab('register')">Register</button>
