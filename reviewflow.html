@@ -391,12 +391,6 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 /* Toast */
 .toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;font-size:11px;padding:8px 16px;border-radius:7px;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.22);white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.blocked-badge{position:fixed;top:14px;right:18px;z-index:900;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;}
-.blocked-dot{width:14px;height:14px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25);flex-shrink:0;transition:transform .15s;}
-.blocked-dot.off{background:#d1d5db;box-shadow:none;}
-.blocked-badge:hover .blocked-dot{transform:scale(1.2);}
-.blocked-lbl{font-size:11px;font-weight:700;color:#ef4444;letter-spacing:.03em;}
-.blocked-lbl.off{color:var(--muted);}
 </style>
 </head>
 <body>
@@ -523,12 +517,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     <div class="zbtn" onclick="fitScreen()" title="Fit [F]"><svg width="11" height="11" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 4.5V1.5H4.5"/><path d="M8.5 1.5H11.5V4.5"/><path d="M11.5 8.5V11.5H8.5"/><path d="M4.5 11.5H1.5V8.5"/></svg></div>
     <div class="zbtn" onclick="zoomBy(-.12)" title="Zoom out">−</div>
   </div>
-  <!-- Blocked status badge -->
-<div class="blocked-badge" id="blocked-badge" onclick="toggleBlocked()" title="Toggle blocked status">
-  <div class="blocked-dot off" id="blocked-dot"></div>
-  <span class="blocked-lbl off" id="blocked-lbl">Blocked</span>
-</div>
-<!-- Context menu -->
+  <!-- Context menu -->
   <div class="ctx-menu" id="ctx-menu"></div>
   <!-- Roadmap overlay (within canvas area) -->
   <div class="rmap" id="rmap">
@@ -2146,6 +2135,11 @@ function renderPins(){
     lbl.title=(p.title||p.auth)+(sessLbl?' — '+sessLbl:'');
     lbl.innerHTML='<span class="pin-label-txt">'+(p.title||p.auth)+'</span><span class="pin-label-sess">'+sessLbl+'</span>';
     wrap.appendChild(pin);wrap.appendChild(lbl);
+    if(p.blocked){
+      var bdot=mk('div','');
+      bdot.style.cssText='position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:#ef4444;border:2px solid #fff;z-index:10;pointer-events:none;';
+      wrap.appendChild(bdot);
+    }
     pin.addEventListener('click',function(e){e.stopPropagation();activatePinFromCanvas(p.id);});
     makeDraggable(wrap,function(){p.x=parseFloat(wrap.style.left);p.y=parseFloat(wrap.style.top);});
     cont.appendChild(wrap);
@@ -2283,6 +2277,7 @@ function renderFeedback(){
     const isOwn=p.userId===S.user.id;
     const isEditing=S.editingPinId===p.id;
     const card=mk('div','fcard'+(isAct?' on':''));card.dataset.id=p.id;
+    if(p.blocked){card.style.borderColor='#ef4444';card.style.borderWidth='2px';}
     const main=mk('div','fcard-main');
     // Session circle in titleRow
     const sess=S.sessions.find(s=>s.id===p.sessId);
@@ -2299,6 +2294,12 @@ function renderFeedback(){
       snCircle.onclick=function(e){e.stopPropagation();highlightSess(p.sessId);};
       titleRow.appendChild(snCircle);
     }
+    // Blocked toggle dot
+    const blockedBtn=mk('div','');
+    blockedBtn.style.cssText='width:13px;height:13px;border-radius:50%;border:2px solid '+(p.blocked?'#ef4444':'var(--border2)')+';background:'+(p.blocked?'#ef4444':'transparent')+';cursor:pointer;flex-shrink:0;margin-top:3px;transition:all .15s;box-shadow:'+(p.blocked?'0 0 0 3px rgba(239,68,68,.2)':'none')+';';
+    blockedBtn.title=p.blocked?'Unblock this comment':'Mark as blocked';
+    blockedBtn.onclick=function(e){e.stopPropagation();p.blocked=!p.blocked;renderFeedback();renderPins();renderRoadmap();if(S.curVer)SEED[S.curVer]=dc(S.pins);};
+    titleRow.appendChild(blockedBtn);
     body.appendChild(titleRow);
     // Author + time row
     const meta=mk('div','fc-meta');
@@ -2446,7 +2447,7 @@ function renderRoadmap(){
         +'</div>':'';
       const resolvedBadge=p.resolved?'<span style="color:#16a34a;font-size:9px;margin-left:5px">✓ Resolved</span>':'';
       const importedBadge=p.importedFrom?'<span style="background:#e5e7eb;color:#6b7280;font-size:9px;padding:1px 6px;border-radius:10px;flex-shrink:0;white-space:nowrap;">from '+p.importedFrom+'</span>':'';
-      html+='<div class="rmap-item" data-id="'+p.id+'" style="border-left:3px solid '+p.color+';cursor:pointer;'+(p.importedFrom?'background:#f8f9fa;':'')+'">'
+      html+='<div class="rmap-item" data-id="'+p.id+'" style="border-left:3px solid '+p.color+';cursor:pointer;'+(p.importedFrom?'background:#f8f9fa;':'')+(p.blocked?'outline:2px solid #ef4444;':'')+'">'
         // Title row with canvas button on the RIGHT
         +'<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;">'
         +'<div class="rmap-item-title" contenteditable="true" data-pid="'+p.id+'" style="flex:1;outline:none;min-width:0;word-break:break-word;" onblur="rmapSaveTitle(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" onclick="event.stopPropagation()">'+p.title+resolvedBadge+'</div>'
@@ -2636,14 +2637,6 @@ function submitRmapReply(pid){
   renderRoadmap();renderFeedback();scheduleSync();
 }
 function toggleResolved(id){const p=rmapPin(id);if(!p)return;p.resolved=!p.resolved;renderRoadmap();renderFeedback();scheduleSync();}
-var _blocked=false;
-function toggleBlocked(){
-  _blocked=!_blocked;
-  var dot=$('blocked-dot'),lbl=$('blocked-lbl');
-  if(dot){dot.classList.toggle('off',!_blocked);}
-  if(lbl){lbl.classList.toggle('off',!_blocked);lbl.textContent=_blocked?'Blocked':'Blocked';}
-  if(_blocked)toast('Blocked flag set — visible to all reviewers');
-}
 function goToPin(id){
   var rp=rmapPin(id);
   var targetVer=(rp&&rp.verId)?rp.verId:S.curVer;
