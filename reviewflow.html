@@ -2417,11 +2417,13 @@ function renderFeedback(){
       titleRow.appendChild(snCircle);
     }
     // Blocked toggle dot
-    const blockedBtn=mk('div','');
-    blockedBtn.style.cssText='width:13px;height:13px;border-radius:50%;border:2px solid '+(p.blocked?'#ef4444':'var(--border2)')+';background:'+(p.blocked?'#ef4444':'transparent')+';cursor:pointer;flex-shrink:0;margin-top:3px;transition:all .15s;box-shadow:'+(p.blocked?'0 0 0 3px rgba(239,68,68,.2)':'none')+';';
-    blockedBtn.title=p.blocked?'Unblock this comment':'Mark as blocked';
-    blockedBtn.onclick=function(e){e.stopPropagation();p.blocked=!p.blocked;renderFeedback();renderPins();renderRoadmap();if(S.curVer)SEED[S.curVer]=dc(S.pins);};
-    titleRow.appendChild(blockedBtn);
+    if(S.isAdmin||p.userId===S.user.id){
+      const blockedBtn=mk('div','');
+      blockedBtn.style.cssText='width:13px;height:13px;border-radius:50%;border:2px solid '+(p.blocked?'#ef4444':'var(--border2)')+';background:'+(p.blocked?'#ef4444':'transparent')+';cursor:pointer;flex-shrink:0;margin-top:3px;transition:all .15s;box-shadow:'+(p.blocked?'0 0 0 3px rgba(239,68,68,.2)':'none')+';';
+      blockedBtn.title=p.blocked?'Unblock this comment':'Mark as blocked';
+      blockedBtn.onclick=function(e){e.stopPropagation();p.blocked=!p.blocked;renderFeedback();renderPins();renderRoadmap();if(S.curVer)SEED[S.curVer]=dc(S.pins);};
+      titleRow.appendChild(blockedBtn);
+    }
     body.appendChild(titleRow);
     // Author + time row
     const meta=mk('div','fc-meta');
