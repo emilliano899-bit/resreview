@@ -772,7 +772,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 
 <script>
 /* ── CONSTANTS ── */
-const COLORS=['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#8b5cf6'];
+const COLORS=['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#8b5cf6','#84cc16','#0ea5e9','#d946ef','#fb923c','#e11d48','#7c3aed','#0891b2','#65a30d','#db2777','#059669'];
 let TAGS=['bug','ux','feature','content','perf','a11y','flow','copy','high-priority'];
 let RMAP_CATS=[
   {id:'planned',emoji:'',label:'Planned',desc:'Upcoming work'},
@@ -1185,6 +1185,10 @@ function switchProduct(pid){
 }
 function pickVer(vid){
   if(S.curVer)SEED[S.curVer]=dc(S.pins); // persist current pins before switching
+  // Clear canvas layers immediately to prevent flicker
+  var nl=$("nodes-layer");if(nl)nl.innerHTML="";
+  var al=$("annots");if(al)al.innerHTML="";
+  var sv=$("ann-svg");if(sv){while(sv.firstChild)sv.removeChild(sv.firstChild);}
   S.curVer=vid;loadPins();applyVerImg();renderTimeline();renderProductDrop();
   const v=S.versions.find(x=>x.id===vid);if(v)toast(v.lbl+' — '+v.name);
 }
@@ -2309,7 +2313,7 @@ function sortedPins(){
   let ps=[...S.pins];
   if(S.activeTag)ps=ps.filter(p=>p.tags.includes(S.activeTag));
   const q=(($('f-search')||{}).value||'').trim().toLowerCase();
-  if(q)ps=ps.filter(p=>(p.title||'').toLowerCase().includes(q)||(p.txt||'').toLowerCase().includes(q));
+  if(q)ps=ps.filter(p=>(p.title||'').toLowerCase().includes(q)||(p.txt||'').toLowerCase().includes(q)||(p.auth||'').toLowerCase().includes(q)||(p.link||'').toLowerCase().includes(q)||((p.tags||[]).join(' ')).toLowerCase().includes(q)||((p.replies||[]).some(r=>(r.txt||'').toLowerCase().includes(q)||(r.auth||'').toLowerCase().includes(q))));
   return ps.sort((a,b)=>S.sortMode==='newest'?b.time.localeCompare(a.time):b.votes-a.votes);
 }
 function renderTagFilters(){
@@ -2583,6 +2587,7 @@ function renderRoadmap(){
         +'<div class="rmap-av" style="background:'+p.color+'">'+p.av+'</div>'
         +'<span class="rmap-aname">'+p.auth+(sess?' · '+sess.name:'')+'</span>'
         +'<button class="upbtn'+(p.voted?' voted':'')+'" style="margin-left:auto;'+(p.voted?'background:'+p.color+';border-color:'+p.color:'')+'" onclick="event.stopPropagation();upvoteRmap(\''+p.id+'\')">▲ '+p.votes+'</button>'
+        +(S.isAdmin||p.userId===S.user.id?'<div onclick="event.stopPropagation();toggleRmapBlocked(\''+p.id+'\')" title="'+(p.blocked?'Unblock':'Mark as blocked')+'" style="width:13px;height:13px;border-radius:50%;border:2px solid '+(p.blocked?'#ef4444':'var(--border2)')+';background:'+(p.blocked?'#ef4444':'transparent')+';cursor:pointer;flex-shrink:0;transition:all .15s;box-shadow:'+(p.blocked?'0 0 0 3px rgba(239,68,68,.2)':'none')+'"></div>':'')
         +'</div>'
         +tagHtml
         +adminControls
@@ -2759,6 +2764,11 @@ function submitRmapReply(pid){
   const p=rmapPin(pid);if(!p)return;
   p.replies.push({id:'r'+Date.now(),auth:S.user.name,av:S.user.av,color:S.user.color,userId:S.user.id,txt,time:new Date().toISOString().slice(0,10)});
   renderRoadmap();renderFeedback();scheduleSync();
+}
+function toggleRmapBlocked(id){
+  var p=rmapPin(id);if(!p)return;
+  p.blocked=!p.blocked;
+  renderRoadmap();renderFeedback();renderPins();scheduleSync();
 }
 function toggleResolved(id){const p=rmapPin(id);if(!p)return;p.resolved=!p.resolved;renderRoadmap();renderFeedback();scheduleSync();}
 function goToPin(id){
