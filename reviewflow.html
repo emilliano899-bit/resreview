@@ -773,7 +773,7 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 <script>
 /* ── CONSTANTS ── */
 const COLORS=['#22c55e','#3b82f6','#f59e0b','#ef4444','#a855f7','#06b6d4','#f97316','#ec4899','#14b8a6','#8b5cf6','#84cc16','#0ea5e9','#d946ef','#fb923c','#e11d48','#7c3aed','#0891b2','#65a30d','#db2777','#059669'];
-let TAGS=['bug','ux','feature','content','perf','a11y','flow','copy','high-priority'];
+let TAGS=[];
 let RMAP_CATS=[
   {id:'planned',emoji:'',label:'Planned',desc:'Upcoming work'},
   {id:'in-progress',emoji:'',label:'In Progress',desc:'Being worked on'},
@@ -788,56 +788,7 @@ function mkPin(id,num,x,y,ci,auth,av,userId,sessId,title,txt,tags,votes,time,roa
   return{id,num,x,y,color:COLORS[ci%COLORS.length],auth,av,userId,sessId,title,txt,tags,votes,voted:false,time,resolved:false,roadmap:!!roadmap,rmap_cat:rmap_cat||'planned',link:link||'',replies:replies||[]};
 }
 const SEED={
-'v1.0':[
-  mkPin('v10p1',1,150,90,0,'User 1','U1','u1','s1','Navigation inconsistency','Back button on step 3 jumps to step 1.',['bug','ux'],4,'2025-01-10',false,'planned','',
-    [{id:'r1',auth:'Sarah',av:'S',color:COLORS[1],txt:'Confirmed on mobile too.',time:'2025-01-11'}]),
-  mkPin('v10p2',2,320,160,1,'Sarah','S','u2','s2','CTA copy feels weak','Try "Design Your Home" instead of "Get Started".',['copy','ux'],7,'2025-01-12',true,'planned','',
-    [{id:'r2',auth:'User 1',av:'U1',color:COLORS[0],txt:'Good call. Will A/B test.',time:'2025-01-13'}]),
-  mkPin('v10p3',3,520,210,2,'Marcus','M','u3','s3','Loading spinner missing','No feedback while images load.',['ux','perf'],5,'2025-01-15',false,'planned','',
-    [{id:'r3',auth:'Sarah',av:'S',color:COLORS[1],txt:'Skeleton screens would be better.',time:'2025-01-16'}]),
-],
-'v1.1':[
-  mkPin('v11p1',1,180,100,0,'User 1','U1','u1','s4','Room selector UX','Buttons too small on mobile. 44px min touch target.',['ux','a11y'],9,'2025-02-01',true,'in-progress','https://docs.google.com/doc1',
-    [{id:'r4',auth:'Sarah',av:'S',color:COLORS[1],txt:'44px per WCAG. Easy fix.',time:'2025-02-02'}]),
-  mkPin('v11p2',2,390,230,1,'Sarah','S','u2','s2','Color picker lagging','Hue slider drops to 10fps on mid-range Android.',['perf','bug'],6,'2025-02-05',true,'planned','',
-    [{id:'r5',auth:'Marcus',av:'M',color:COLORS[2],txt:'Debounce the onChange handler.',time:'2025-02-06'}]),
-  mkPin('v11p3',3,570,140,2,'Marcus','M','u3','s3','Missing keyboard nav','Tab order breaks after opening material modal.',['a11y'],11,'2025-02-08',true,'in-progress','',
-    [{id:'r6',auth:'User 1',av:'U1',color:COLORS[0],txt:'Focus trap needed. On my list.',time:'2025-02-09'}]),
-  mkPin('v11p4',4,210,330,0,'User 1','U1','u1','s1','Save progress','Users lose their config when closing the browser.',['feature'],14,'2025-02-10',true,'planned','https://docs.google.com/doc2',
-    [{id:'r7',auth:'Sarah',av:'S',color:COLORS[1],txt:'Link-based save is shareable!',time:'2025-02-11'}]),
-  mkPin('v11p5',5,430,80,1,'Sarah','S','u2','s4','Checkout flow confusing','After selecting materials, the next step is unclear. Users drop off before reaching checkout.',['ux','flow'],8,'2025-02-12',true,'in-progress','',
-    [{id:'r8',auth:'User 1',av:'U1',color:COLORS[0],txt:'Step indicator at the top would help.',time:'2025-02-13'},{id:'r9',auth:'Marcus',av:'M',color:COLORS[2],txt:'Progress bar is missing entirely on step 3.',time:'2025-02-14'}]),
-  mkPin('v11p6',6,300,280,2,'Marcus','M','u3','s3','Price update delay','Total price takes 2–3 seconds to reflect material changes. Feels broken.',['perf','bug'],6,'2025-02-15',false,'planned','',
-    [{id:'r10',auth:'Sarah',av:'S',color:COLORS[1],txt:'Debounce + optimistic UI would fix this.',time:'2025-02-16'}]),
-  mkPin('v11p7',7,500,310,0,'User 1','U1','u1','s1','Share configuration link','No way to share or bookmark a room config. High demand from sales team.',['feature'],12,'2025-02-17',true,'done','https://docs.google.com/doc5',
-    [{id:'r11',auth:'Sarah',av:'S',color:COLORS[1],txt:'URL hash approach is cleanest.',time:'2025-02-18'},{id:'r12',auth:'Marcus',av:'M',color:COLORS[2],txt:'Shipped in build 112 — link copied to clipboard.',time:'2025-02-20'}]),
-  mkPin('v11p8',8,650,180,1,'Sarah','S','u2','s2','3D preview breaks on Safari','Configurator 3D view shows black screen on Safari 17. About 30% of our users.',['bug'],9,'2025-02-19',true,'in-progress','',
-    [{id:'r13',auth:'User 1',av:'U1',color:COLORS[0],txt:'WebGL context issue. Needs vendor prefix fix.',time:'2025-02-20'}]),
-],
-'v1.2':[
-  mkPin('v12p1',1,150,95,1,'Sarah','S','u2','s2','Room label overflow','Long names clip in nav tabs.',['bug','ux'],3,'2025-03-01',false,'planned','',
-    [{id:'r8',auth:'User 1',av:'U1',color:COLORS[0],txt:'Truncate + tooltip.',time:'2025-03-02'}]),
-  mkPin('v12p2',2,330,185,0,'User 1','U1','u1','s4','Transition animation','Room switch should slide, not hard-cut.',['ux'],5,'2025-03-05',true,'planned','',
-    [{id:'r9',auth:'Marcus',av:'M',color:COLORS[2],txt:'CSS transitions — no lib needed.',time:'2025-03-06'}]),
-],
-'v1.3':[
-  mkPin('v13p1',1,210,125,2,'Marcus','M','u3','s3','PDF bleed area','Need 3mm bleed on exported PDF.',['content'],2,'2025-04-01',true,'planned','',
-    [{id:'r10',auth:'User 1',av:'U1',color:COLORS[0],txt:'Adjust canvas padding before export.',time:'2025-04-02'}]),
-  mkPin('v13p2',2,410,260,0,'User 1','U1','u1','s1','Font embedding','Custom fonts must be embedded in PDF.',['content','bug'],4,'2025-04-05',true,'in-progress','',
-    [{id:'r11',auth:'Sarah',av:'S',color:COLORS[1],txt:'jsPDF supports this.',time:'2025-04-06'}]),
-],
-'web1.0':[
-  mkPin('w10p1',1,170,115,1,'Sarah','S','u2','s2','Hero image 4MB','Kills mobile load time.',['perf'],8,'2025-01-20',true,'planned','',
-    [{id:'r12',auth:'User 1',av:'U1',color:COLORS[0],txt:'WebP + lazy load.',time:'2025-01-21'}]),
-  mkPin('w10p2',2,350,205,0,'User 1','U1','u1','s4','CTA below fold','Not visible on 13" laptops.',['ux'],6,'2025-01-22',false,'planned','',
-    [{id:'r13',auth:'Marcus',av:'M',color:COLORS[2],txt:'Reduce hero height 80px.',time:'2025-01-23'}]),
-],
-'web1.1':[
-  mkPin('w11p1',1,225,135,2,'Marcus','M','u3','s3','Embed breaks at 768px','Responsive iframe issue.',['bug','ux'],7,'2025-02-20',true,'in-progress','',
-    [{id:'r14',auth:'User 1',av:'U1',color:COLORS[0],txt:'Fixing with aspect-ratio CSS.',time:'2025-02-21'}]),
-  mkPin('w11p2',2,430,235,0,'User 1','U1','u1','s1','Dark mode support','Embed looks bad in OS dark mode.',['ux','feature'],5,'2025-02-22',true,'planned','https://docs.google.com/doc3',
-    [{id:'r15',auth:'Sarah',av:'S',color:COLORS[1],txt:'prefers-color-scheme query.',time:'2025-02-23'}]),
-],
+'v1.0':[],'v1.1':[],'v1.2':[],'v1.3':[],'web1.0':[],'web1.1':[],
 };
 
 /* ── STATE ── */
@@ -1849,6 +1800,10 @@ function applyVis(){
       });
     }
   }
+  // Safety net: general-mode elements are ALWAYS visible regardless of any other rule
+  document.querySelectorAll('[data-own="general"]').forEach(function(el){
+    el.style.display='';el.style.opacity='1';
+  });
 }
 
 /* ── SCREENSHOT ── */
