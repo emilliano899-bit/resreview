@@ -760,6 +760,19 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
     </div>
   </div>
 </div>
+<!-- Onboarding modal: first product + version setup -->
+<div class="mover" id="onboard-modal" style="background:#f4f5f7;">
+  <div class="modal" style="width:420px;padding:36px 36px 28px;">
+    <div style="font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;">Welcome to ResDesign</div>
+    <div style="font-size:13px;color:#888;margin-bottom:28px;">Set up your first product and version to get started.</div>
+    <div class="mf"><div class="ml">Product name</div><input class="mi" id="ob-prod" placeholder="e.g. Mobile App, Website, Dashboard" onkeydown="if(event.key==='Enter')document.getElementById('ob-ver-nm').focus()"></div>
+    <div style="display:flex;gap:10px;">
+      <div class="mf" style="flex:0 0 100px"><div class="ml">Version label</div><input class="mi" id="ob-ver-lbl" placeholder="v1.0"></div>
+      <div class="mf" style="flex:1"><div class="ml">Version name</div><input class="mi" id="ob-ver-nm" placeholder="e.g. Initial Release" onkeydown="if(event.key==='Enter')confirmOnboard()"></div>
+    </div>
+    <div class="mact" style="margin-top:8px;"><button class="mbtn pri" style="width:100%;justify-content:center;" onclick="confirmOnboard()">Start →</button></div>
+  </div>
+</div>
 <!-- Mention dropdown -->
 <div class="mention-drop" id="mention-drop"></div>
 <div class="toast" id="toast-el"></div>
@@ -1002,7 +1015,11 @@ function applyUser(u,silent){
     S.activeSessionId=sid2;
   }
   updateChip();renderSessDrop();
-  if(!silent)toast('Welcome, '+u.name+'!');
+  if(!silent){
+    toast('Welcome, '+u.name+'!');
+    // If no products yet, show onboarding
+    setTimeout(function(){if(!S.products.length)openOnboard();},300);
+  }
 }
 function openUsersPanel(){
   if(!S.isAdmin){toast('Admins only');return;}
@@ -1065,6 +1082,11 @@ function renderProductDrop(){
     head.appendChild(addBtn);
   }
   d.appendChild(head);
+  if(!S.products.length){
+    const emp=mk('div','',S.isAdmin?'No products yet — create one below.':'No products yet.');
+    emp.style.cssText='padding:14px 14px 4px;font-size:12px;color:var(--muted);';
+    d.appendChild(emp);
+  }
   S.products.forEach(p=>{
     const prod=mk('div','pd-prod');
     const hdr=mk('div','pd-prod-hdr');
@@ -1104,8 +1126,9 @@ function renderProductDrop(){
   // Update header display
   const p=curProd(),v=S.versions.find(x=>x.id===S.curVer);
   const vp=$('vpick-prod'),vt=$('vtag'),vv=$('vpick-ver');
-  if(vp)vp.textContent=p.name;
-  if(vt&&v)vt.textContent=v.lbl;if(vv&&v)vv.textContent=v.name;
+  if(vp)vp.textContent=p?p.name:'No Product';
+  if(vt&&v)vt.textContent=v.lbl;else if(vt)vt.textContent='—';
+  if(vv&&v)vv.textContent=v.name;else if(vv)vv.textContent='';
 }
 function toggleProductDrop(){
   const d=$('prod-drop');const btn=$('vpick');
@@ -1138,6 +1161,24 @@ function applyVerImg(){
   const ph=$('img-ph');if(ph)ph.style.display=url?'none':'flex';
 }
 function openAddProduct(){$('prod-name-in').value='';openModal('prod-modal');}
+function openOnboard(){
+  $('ob-prod').value='';$('ob-ver-lbl').value='v1.0';$('ob-ver-nm').value='';
+  openModal('onboard-modal');
+  setTimeout(function(){var e=$('ob-prod');if(e)e.focus();},80);
+}
+function confirmOnboard(){
+  var pnm=($('ob-prod').value||'').trim();
+  var vlbl=($('ob-ver-lbl').value||'').trim()||'v1.0';
+  var vnm=($('ob-ver-nm').value||'').trim();
+  if(!pnm){$('ob-prod').focus();toast('Enter a product name');return;}
+  if(!vnm){$('ob-ver-nm').focus();toast('Enter a version name');return;}
+  var pid='prod'+Date.now();
+  S.products.push({id:pid,name:pnm,icon:''});
+  S.versions.push({id:pid+'-'+vlbl,lbl:vlbl,status:'cur',name:vnm,productId:pid});
+  S.activeProductId=pid;S.curVer=pid+'-'+vlbl;
+  closeModal('onboard-modal');renderProductDrop();renderTimeline();loadPins();
+  toast('Ready! Now in '+pnm+' '+vlbl);
+}
 function confirmAddProduct(){
   const nm=($('prod-name-in').value||'').trim();if(!nm){toast('Enter product name');return;}
   S.products.push({id:'prod'+Date.now(),name:nm,icon:''});
