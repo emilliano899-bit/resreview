@@ -391,6 +391,18 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
 /* Toast */
 .toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--text);color:#fff;font-size:11px;padding:8px 16px;border-radius:7px;z-index:9999;opacity:0;transition:all .2s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.22);white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.auth-mover{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:none;align-items:center;justify-content:center;}
+.auth-mover.open{display:flex;}
+.auth-box{width:360px;padding:32px 32px 24px;border-radius:16px;background:var(--surface);box-shadow:0 20px 60px rgba(0,0,0,.22);}
+.auth-logo{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:24px;color:var(--text);}
+.auth-tabs{display:flex;gap:0;margin-bottom:22px;border-bottom:2px solid var(--border);}
+.atab{background:none;border:none;font-size:14px;font-weight:600;padding:8px 18px 10px;cursor:pointer;color:var(--muted);font-family:inherit;border-bottom:3px solid transparent;margin-bottom:-2px;transition:color .15s;}
+.atab.on{color:var(--text);border-bottom-color:var(--text);}
+.auth-err{color:#ef4444;font-size:12px;margin-bottom:10px;min-height:16px;}
+.users-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.users-row:last-child{border-bottom:none;}
+.users-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;}
+.users-name{flex:1;font-size:13px;font-weight:500;}
 </style>
 </head>
 <body>
@@ -587,21 +599,48 @@ svg .ann-sel{outline:none!important;filter:drop-shadow(0 0 3px var(--sel));}
       <span class="sett-val" id="sett-panel-w-val">360px</span>
     </div>
   </div>
+  <div class="sett-sep" id="sett-users-sep" style="display:none"></div>
+  <div class="sett-row" id="sett-users-row" style="display:none">
+    <div><div class="sett-lbl">Users</div><div class="sett-sub">Manage roles</div></div>
+    <div class="sett-ctrl"><button class="mbtn" onclick="openUsersPanel();toggleSettings();" style="font-size:11px;padding:3px 10px;">Manage</button></div>
+  </div>
 </div>
 
 <!-- TIMELINE -->
 <div class="tline"><div class="ttrack" id="tline-items"></div></div>
 
 <!-- MODALS -->
-<!-- User setup -->
-<div class="mover" id="user-modal">
-  <div class="modal narrow">
-    <div class="mtit">Who are you?</div>
-    <div class="mf"><div class="ml">Your name</div><input class="mi" id="user-name-in" placeholder="e.g. User 1" autocomplete="off"></div>
-    <div class="mf"><div class="ml">Your color — used for all your annotations</div>
-      <div class="sess-color-grid" id="user-color-grid"></div>
+<!-- Auth modal (login / register) -->
+<div class="auth-mover" id="auth-modal">
+  <div class="auth-box">
+    <div class="auth-logo">ReviewFlow</div>
+    <div class="auth-tabs">
+      <button class="atab on" id="atab-login" onclick="switchAuthTab('login')">Log in</button>
+      <button class="atab" id="atab-register" onclick="switchAuthTab('register')">Register</button>
     </div>
-    <div class="mact"><button class="mbtn pri" onclick="confirmUser()">Let's go →</button></div>
+    <!-- Login -->
+    <div id="auth-login-form">
+      <div class="mf"><div class="ml">Name</div><input class="mi" id="auth-ln" placeholder="Your name" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="mf"><div class="ml">Password</div><input class="mi" type="password" id="auth-lp" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="auth-err" id="auth-lerr"></div>
+      <div class="mact"><button class="mbtn pri" onclick="doLogin()">Log in →</button></div>
+    </div>
+    <!-- Register -->
+    <div id="auth-register-form" style="display:none">
+      <div class="mf"><div class="ml">Name</div><input class="mi" id="auth-rn" placeholder="Your name" autocomplete="username"></div>
+      <div class="mf"><div class="ml">Password</div><input class="mi" type="password" id="auth-rp" placeholder="Create a password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="mf"><div class="ml">Your colour</div><div class="sess-color-grid" id="auth-color-grid"></div></div>
+      <div class="auth-err" id="auth-rerr"></div>
+      <div class="mact"><button class="mbtn pri" onclick="doRegister()">Create account →</button></div>
+    </div>
+  </div>
+</div>
+<!-- Users management modal (admin only) -->
+<div class="mover" id="users-modal">
+  <div class="modal">
+    <div class="mtit">Registered Users</div>
+    <div id="users-list" style="max-height:320px;overflow-y:auto;"></div>
+    <div class="mact" style="margin-top:14px;"><button class="mbtn" onclick="closeModal('users-modal')">Close</button></div>
   </div>
 </div>
 <!-- New Session modal -->
@@ -954,19 +993,102 @@ function init(){
   renderProductDrop();
   renderTimeline();
   // Show login on first load
-  setTimeout(function(){openModal('user-modal');},100);
+  // Auth: check saved session first
+  var _savedAuth=null;
+  try{_savedAuth=JSON.parse(localStorage.getItem('reviewflow_auth')||'null');}catch(e){}
+  if(_savedAuth&&_savedAuth.id&&_savedAuth.name){
+    applyUser(_savedAuth,true);
+  }else{
+    openAuthModal();
+  }
 }
 
 /* ── USER CHIP ── */
-function confirmUser(){
-  const nm=($('user-name-in').value||'').trim();
-  if(!nm){toast('Enter your name');return;}
-  S.user.name=nm;
-  S.user.av=nm.slice(0,2).toUpperCase();
-  closeModal('user-modal');
-  updateChip();
-  toast('Welcome, '+nm+'!');
+/* ── AUTH ── */
+function rfUsers(){try{return JSON.parse(localStorage.getItem('reviewflow_users')||'[]');}catch(e){return[];}}
+function saveRfUsers(u){localStorage.setItem('reviewflow_users',JSON.stringify(u));}
+function openAuthModal(){
+  var modal=$('auth-modal');if(!modal)return;
+  modal.classList.add('open');
+  // Build colour grid for register
+  setTimeout(function(){
+    var grid=$('auth-color-grid');if(!grid)return;grid.innerHTML='';
+    S._regColor=S._regColor||COLORS[0];
+    COLORS.forEach(function(c){
+      var sw=mk('div','');sw.style.cssText='width:22px;height:22px;border-radius:50%;background:'+c+';cursor:pointer;border:2.5px solid '+(c===S._regColor?'#1a1a1a':'transparent')+';transition:transform .12s;';
+      sw.onclick=function(){S._regColor=c;var g=$('auth-color-grid');if(g)g.querySelectorAll('div').forEach(function(x){x.style.borderColor=x.style.background===c?'#1a1a1a':'transparent';});};
+      grid.appendChild(sw);
+    });
+  },50);
 }
+function switchAuthTab(tab){
+  $('auth-login-form').style.display=tab==='login'?'':'none';
+  $('auth-register-form').style.display=tab==='register'?'':'none';
+  $('atab-login').classList.toggle('on',tab==='login');
+  $('atab-register').classList.toggle('on',tab==='register');
+  $('auth-lerr').textContent='';$('auth-rerr').textContent='';
+  if(tab==='register'){var g=$('auth-color-grid');if(g&&!g.children.length){openAuthModal();}}
+}
+function doLogin(){
+  var nm=($('auth-ln').value||'').trim();
+  var pw=($('auth-lp').value||'').trim();
+  if(!nm||!pw){$('auth-lerr').textContent='Please fill in all fields.';return;}
+  var users=rfUsers();
+  var u=users.find(function(x){return x.name.toLowerCase()===nm.toLowerCase()&&x.password===pw;});
+  if(!u){$('auth-lerr').textContent='Name or password incorrect.';return;}
+  applyUser(u,false);
+}
+function doRegister(){
+  var nm=($('auth-rn').value||'').trim();
+  var pw=($('auth-rp').value||'').trim();
+  if(!nm||!pw){$('auth-rerr').textContent='Please fill in all fields.';return;}
+  var users=rfUsers();
+  if(users.find(function(x){return x.name.toLowerCase()===nm.toLowerCase();})){$('auth-rerr').textContent='That name is already taken.';return;}
+  var isAdmin=users.length===0; // first registered user becomes admin
+  var id='u'+Date.now();
+  var color=S._regColor||COLORS[users.length%COLORS.length];
+  var u={id:id,name:nm,av:nm.slice(0,2).toUpperCase(),color:color,password:pw,isAdmin:isAdmin};
+  users.push(u);saveRfUsers(users);
+  applyUser(u,false);
+}
+function applyUser(u,silent){
+  S.user={id:u.id,name:u.name,av:u.av,color:u.color};
+  S.isAdmin=!!u.isAdmin;
+  localStorage.setItem('reviewflow_auth',JSON.stringify(u));
+  var modal=$('auth-modal');if(modal)modal.classList.remove('open');
+  $('admin-btn').classList.toggle('lit',S.isAdmin);
+  $('admin-pill').style.display=S.isAdmin?'':'none';
+  var sr=$('sett-users-row'),ss=$('sett-users-sep');
+  if(sr)sr.style.display=S.isAdmin?'':'none';
+  if(ss)ss.style.display=S.isAdmin?'':'none';
+  updateChip();
+  if(!silent)toast('Welcome, '+u.name+'!');
+}
+function openUsersPanel(){
+  if(!S.isAdmin){toast('Admins only');return;}
+  var users=rfUsers();
+  var list=$('users-list');if(!list)return;
+  list.innerHTML='';
+  if(!users.length){list.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px 0;">No registered users yet.</div>';openModal('users-modal');return;}
+  users.forEach(function(u){
+    var row=mk('div','users-row');
+    var av=mk('div','users-av');av.style.background=u.color;av.textContent=u.av;
+    var nm=mk('div','users-name');nm.textContent=u.name+(u.id===S.user.id?' (you)':'');
+    var badge=u.isAdmin?mk('span','admin-pill','ADMIN'):mk('span','','');
+    var btn=mk('button','mbtn',u.isAdmin?'Remove admin':'Make admin');
+    btn.style.cssText='font-size:11px;padding:3px 10px;';
+    if(u.id===S.user.id){btn.disabled=true;btn.style.opacity='.4';}
+    btn.onclick=function(){
+      var all=rfUsers();var t=all.find(function(x){return x.id===u.id;});
+      if(t){t.isAdmin=!t.isAdmin;saveRfUsers(all);}
+      openUsersPanel();
+    };
+    row.appendChild(av);row.appendChild(nm);row.appendChild(badge);row.appendChild(btn);
+    list.appendChild(row);
+  });
+  openModal('users-modal');
+}
+function confirmUser(){}
 function updateChip(){
   const ch=$('user-chip');
   ch.style.background=S.user.color;
